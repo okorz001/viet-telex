@@ -9,11 +9,11 @@ A TypeScript module for encoding/decoding Vietnamese text in Telex format. The T
 ## Commands
 
 ```sh
-npm test       # run tests
-npm run build  # compile TypeScript
+npm test       # run tests with Vitest
+npm run build  # compile TypeScript to dist/
 ```
 
-> Note: as of initial setup, these scripts are stubs. Update this file once the toolchain is configured.
+Always verify `npm test` and `npm run build` pass before proposing a code change.
 
 ## Telex Encoding Summary
 
