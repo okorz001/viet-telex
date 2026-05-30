@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { encode } from "./index.js";
+import { encode, decode } from "./index.js";
 
 describe("encode", () => {
   describe("non-encoded text", () => {
@@ -108,6 +108,95 @@ describe("encode", () => {
 
     it("encodes digraph at start of word", () => {
       expect(encode("owng")).toBe("ơng");
+    });
+  });
+});
+
+describe("decode", () => {
+  describe("non-decoded text", () => {
+    it("returns plain ASCII unchanged", () => {
+      expect(decode("hello")).toBe("hello");
+    });
+
+    it("returns empty string unchanged", () => {
+      expect(decode("")).toBe("");
+    });
+
+    it("returns single characters unchanged", () => {
+      expect(decode("a")).toBe("a");
+      expect(decode("o")).toBe("o");
+    });
+  });
+
+  describe("extended Latin chars", () => {
+    it("decodes ă → aw", () => {
+      expect(decode("ă")).toBe("aw");
+    });
+
+    it("decodes â → aa", () => {
+      expect(decode("â")).toBe("aa");
+    });
+
+    it("decodes đ → dd", () => {
+      expect(decode("đ")).toBe("dd");
+    });
+
+    it("decodes ê → ee", () => {
+      expect(decode("ê")).toBe("ee");
+    });
+
+    it("decodes ô → oo", () => {
+      expect(decode("ô")).toBe("oo");
+    });
+
+    it("decodes ơ → ow", () => {
+      expect(decode("ơ")).toBe("ow");
+    });
+
+    it("decodes ư → uw", () => {
+      expect(decode("ư")).toBe("uw");
+    });
+  });
+
+  describe("case handling", () => {
+    it("uppercase char produces uppercase first digraph char", () => {
+      expect(decode("Ă")).toBe("Aw");
+      expect(decode("Â")).toBe("Aa");
+      expect(decode("Đ")).toBe("Dd");
+      expect(decode("Ê")).toBe("Ee");
+      expect(decode("Ô")).toBe("Oo");
+      expect(decode("Ơ")).toBe("Ow");
+      expect(decode("Ư")).toBe("Uw");
+    });
+
+    it("lowercase char produces lowercase digraph", () => {
+      expect(decode("ơ")).toBe("ow");
+    });
+  });
+
+  describe("chars in context", () => {
+    it("decodes char within a word", () => {
+      expect(decode("dơ")).toBe("dow");
+    });
+
+    it("decodes char at start of word", () => {
+      expect(decode("ơng")).toBe("owng");
+    });
+
+    it("passes through non-Vietnamese chars alongside decoded chars", () => {
+      expect(decode("ôw")).toBe("oow");
+    });
+  });
+
+  describe("roundtrip", () => {
+    it("encode(decode(x)) === x for Vietnamese text", () => {
+      expect(encode(decode("ơng"))).toBe("ơng");
+      expect(encode(decode("Đông"))).toBe("Đông");
+    });
+
+    it("decode(encode(x)) === x for Telex input", () => {
+      expect(decode(encode("owng"))).toBe("owng");
+      expect(decode(encode("Ddowng"))).toBe("Ddowng");
     });
   });
 });
