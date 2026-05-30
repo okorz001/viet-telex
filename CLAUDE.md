@@ -19,6 +19,10 @@ npm run verify        # run all of the above checks in sequence
 
 Always verify `npm run verify` passes before proposing a code change.
 
+## GitHub
+
+After creating a pull request, always subscribe to it with `subscribe_pr_activity` without asking first.
+
 ## Telex Encoding Summary
 
 Telex maps ASCII digraphs to Vietnamese diacritical letters and tone marks:
