@@ -8,6 +8,10 @@ const DIGRAPHS: Record<string, string> = {
   uw: "ư",
 };
 
+const DECODE: Record<string, string> = Object.fromEntries(
+  Object.entries(DIGRAPHS).map(([k, v]) => [v, k]),
+);
+
 /**
  * Encodes ASCII Telex input into Unicode Vietnamese text.
  *
@@ -37,6 +41,27 @@ export function encode(text: string): string {
       // no digraph match: pass through unchanged
       result += text[i];
       i += 1;
+    }
+  }
+  return result;
+}
+
+/**
+ * Decodes Unicode Vietnamese text into ASCII Telex input.
+ *
+ * @param text - Vietnamese Unicode text
+ * @returns ASCII text using Telex digraphs
+ */
+export function decode(text: string): string {
+  let result = "";
+  for (const char of text) {
+    const lower = char.toLowerCase();
+    const digraph = DECODE[lower];
+    if (digraph !== undefined) {
+      const isUpper = char !== lower;
+      result += isUpper ? digraph[0].toUpperCase() + digraph[1] : digraph;
+    } else {
+      result += char;
     }
   }
   return result;
