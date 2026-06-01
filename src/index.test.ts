@@ -275,6 +275,12 @@ describe("decode tones", () => {
       expect(decode("hoas")).toBe("hoá");
     });
   });
+
+  describe("tone placement on triphthongs", () => {
+    it("Nguyeenx → Nguyễn (uyê: tone on ê, index 2)", () => {
+      expect(decode("Nguyeenx")).toBe("Nguyễn");
+    });
+  });
 });
 
 describe("encode tones", () => {
@@ -300,6 +306,10 @@ describe("encode tones", () => {
 
   it("encodes hồng → hoongf (tone at end of word, after final consonant)", () => {
     expect(encode("hồng")).toBe("hoongf");
+  });
+
+  it("encodes Nguyễn → Nguyeenx (uyê: tone on ê, index 2)", () => {
+    expect(encode("Nguyễn")).toBe("Nguyeenx");
   });
 
   describe("roundtrip with tones", () => {
