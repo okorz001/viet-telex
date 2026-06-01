@@ -200,3 +200,117 @@ describe("encode", () => {
     });
   });
 });
+
+describe("decode tones", () => {
+  describe("basic tones", () => {
+    it("decodes sắc: mas → má", () => {
+      expect(decode("mas")).toBe("má");
+    });
+
+    it("decodes huyền: maf → mà", () => {
+      expect(decode("maf")).toBe("mà");
+    });
+
+    it("decodes hỏi: mar → mả", () => {
+      expect(decode("mar")).toBe("mả");
+    });
+
+    it("decodes ngã: max → mã", () => {
+      expect(decode("max")).toBe("mã");
+    });
+
+    it("decodes nặng: maj → mạ", () => {
+      expect(decode("maj")).toBe("mạ");
+    });
+  });
+
+  describe("tone clear", () => {
+    it("maz → ma (z removes tone)", () => {
+      expect(decode("maz")).toBe("ma");
+    });
+
+    it("masz → ma (s then z: z clears)", () => {
+      expect(decode("masz")).toBe("ma");
+    });
+  });
+
+  describe("tone overwrite", () => {
+    it("mafs → má (f then s: last wins)", () => {
+      expect(decode("mafs")).toBe("má");
+    });
+
+    it("mazs → má (z then s: last wins)", () => {
+      expect(decode("mazs")).toBe("má");
+    });
+  });
+
+  describe("tone escape", () => {
+    it("catss → cats (doubled s = literal s)", () => {
+      expect(decode("catss")).toBe("cats");
+    });
+  });
+
+  describe("consonant letters not consumed as tones", () => {
+    it("sao → sao (s before vowel is a consonant)", () => {
+      expect(decode("sao")).toBe("sao");
+    });
+
+    it("sang → sang", () => {
+      expect(decode("sang")).toBe("sang");
+    });
+  });
+
+  describe("tone with final consonant (tone at end of word)", () => {
+    it("hoongf → hồng (ô + ng + huyền)", () => {
+      expect(decode("hoongf")).toBe("hồng");
+    });
+  });
+
+  describe("tone placement on diphthongs", () => {
+    it("mais → mái (ai: tone on a, index 0)", () => {
+      expect(decode("mais")).toBe("mái");
+    });
+
+    it("hoas → hoá (oa: tone on a, index 1)", () => {
+      expect(decode("hoas")).toBe("hoá");
+    });
+  });
+});
+
+describe("encode tones", () => {
+  it("encodes sắc: má → mas", () => {
+    expect(encode("má")).toBe("mas");
+  });
+
+  it("encodes huyền: mà → maf", () => {
+    expect(encode("mà")).toBe("maf");
+  });
+
+  it("encodes hỏi: mả → mar", () => {
+    expect(encode("mả")).toBe("mar");
+  });
+
+  it("encodes ngã: mã → max", () => {
+    expect(encode("mã")).toBe("max");
+  });
+
+  it("encodes nặng: mạ → maj", () => {
+    expect(encode("mạ")).toBe("maj");
+  });
+
+  it("encodes hồng → hoongf (tone at end of word, after final consonant)", () => {
+    expect(encode("hồng")).toBe("hoongf");
+  });
+
+  describe("roundtrip with tones", () => {
+    it("decode(encode(x)) === x for toned Vietnamese", () => {
+      expect(decode(encode("hồng"))).toBe("hồng");
+      expect(decode(encode("hoàng"))).toBe("hoàng");
+    });
+
+    it("encode(decode(x)) === x for toned Telex", () => {
+      expect(encode(decode("hoongf"))).toBe("hoongf");
+      expect(encode(decode("hoas"))).toBe("hoas");
+    });
+  });
+});
