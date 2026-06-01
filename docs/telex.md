@@ -1,6 +1,8 @@
 # Telex Encoding
 
-Vietnamese uses a Latin-based alphabet, but requires diacritical marks to both distinguish certain letters and to indicate tone.
+This document explains how the Telex encoding represents Vietnamese in simple ASCII.
+
+Vietnamese uses a Latin-based alphabet, but uses diacritical marks to both distinguish letters and indicate tone.
 
 ## Why
 
