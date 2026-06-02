@@ -25,6 +25,8 @@ After creating a pull request, always subscribe to it with `subscribe_pr_activit
 
 When checking CI results, always fetch annotations even on passing runs — a green conclusion can still carry warnings that need attention.
 
+When adding a new GitHub Actions action, look up its latest stable release and use that version tag. Do not guess or reuse version tags from existing workflow steps.
+
 ## Code Style
 
 All exported symbols must have a full TSDoc comment describing what the function does, its parameters (`@param`), and its return value (`@returns`). One-line summaries are not sufficient for exported API.
