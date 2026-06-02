@@ -27,7 +27,7 @@ const ENCODE_TONE: Record<string, string> = Object.fromEntries(
 // Maps vowel cluster (lowercase) to index of nucleus vowel within that cluster.
 // Unlisted clusters fall back to: last vowel before any trailing consonant.
 const NUCLEI: Record<string, number> = {
-  // Off-glide diphthongs: nucleus is first vowel
+  // nucleus at index 0
   ai: 0,
   ao: 0,
   au: 0,
@@ -41,31 +41,29 @@ const NUCLEI: Record<string, number> = {
   ôi: 0,
   ơi: 0,
   ui: 0,
+  uy: 0,
   ưi: 0,
   ưu: 0,
-  // On-glide diphthongs: nucleus is second vowel
+  // nucleus at index 1
   ia: 1,
+  iê: 1,
+  iêu: 1,
   oa: 1,
-  oe: 1,
-  ua: 1,
-  uê: 1,
-  ưa: 1,
-  // Special
-  uy: 0,
-  // Triphthongs
   oai: 1,
   oao: 1,
+  oe: 1,
   oeo: 1,
-  iêu: 1,
-  yêu: 1,
-  uya: 1,
-  // Clusters requiring final consonant (nucleus is long vowel at index 1)
-  iê: 1,
-  uyê: 2,
-  uâ: 1,
-  uô: 1,
-  ươ: 1,
   oă: 1,
+  ua: 1,
+  uya: 1,
+  uâ: 1,
+  uê: 1,
+  uô: 1,
+  ưa: 1,
+  ươ: 1,
+  yêu: 1,
+  // nucleus at index 2
+  uyê: 2,
 };
 
 const VOWELS = new Set("aăâeêioôơuưy");
