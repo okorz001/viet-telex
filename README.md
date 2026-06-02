@@ -6,14 +6,14 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 
 ## Features
 
-- **Decode**: convert Telex basic Latin input into Vietnamese Unicode text
-- **Encode**: convert Vietnamese Unicode text back into Telex basic Latin
+- **Decode**: convert Telex basic Latin input into proper Vietnamese text
+- **Encode**: convert proper Vietnamese text back into Telex basic Latin
 
 ## API
 
 ### `decode(text: string): string`
 
-Takes basic Latin text using Telex digraphs and returns Vietnamese Unicode text.
+Takes basic Latin text using Telex digraphs and returns proper Vietnamese text.
 
 ```ts
 decode("owng"); // → "ơng"
@@ -22,7 +22,7 @@ decode("Ddowng"); // → "Đông"
 
 ### `encode(text: string): string`
 
-Takes Vietnamese Unicode text and returns basic Latin text using Telex digraphs.
+Takes proper Vietnamese text and returns basic Latin text using Telex digraphs.
 
 ```ts
 encode("ơng"); // → "owng"
