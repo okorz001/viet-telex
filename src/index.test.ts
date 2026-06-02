@@ -102,13 +102,37 @@ describe("decode", () => {
       expect(decode("dow")).toBe("dơ");
     });
 
-    it("decodes oo then passes through trailing char", () => {
-      expect(decode("oow")).toBe("ôw");
+    it("oow passes through unchanged (ôw is not valid Vietnamese)", () => {
+      expect(decode("oow")).toBe("oow");
     });
 
     it("decodes digraph at start of word", () => {
       expect(decode("owng")).toBe("ơng");
     });
+  });
+});
+
+describe("non-Vietnamese passthrough", () => {
+  it("show → show (sh is not a valid initial consonant)", () => {
+    expect(decode("show")).toBe("show");
+  });
+  it("odd → odd (dd is not a valid final consonant)", () => {
+    expect(decode("odd")).toBe("odd");
+  });
+  it("zero → zero (z is not a valid initial consonant)", () => {
+    expect(decode("zero")).toBe("zero");
+  });
+  it("three → three (thr: r is not a vowel after th)", () => {
+    expect(decode("three")).toBe("three");
+  });
+  it("jeff → jeff (j is not a valid initial consonant)", () => {
+    expect(decode("jeff")).toBe("jeff");
+  });
+  it("war → war (w is not a valid initial consonant)", () => {
+    expect(decode("war")).toBe("war");
+  });
+  it("still decodes Vietnamese words in mixed input", () => {
+    expect(decode("show owng")).toBe("show ơng");
   });
 });
 
