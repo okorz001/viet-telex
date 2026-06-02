@@ -1,6 +1,6 @@
 # Telex Encoding
 
-This document explains how the Telex encoding represents Vietnamese in simple ASCII.
+This document explains how the Telex encoding represents Vietnamese in simple basic Latin.
 
 Vietnamese uses a Latin-based alphabet, but uses diacritical marks to both distinguish letters and indicate tone.
 
@@ -8,7 +8,7 @@ Vietnamese uses a Latin-based alphabet, but uses diacritical marks to both disti
 
 Diacritical marks are critical to understanding Vietnamese text. There are many word collisions without them, and it can be difficult to identify the intended word.
 
-For example, the following words are all reduced in simple ASCII to "dau":
+For example, the following words are all reduced in simple basic Latin to "dau":
 
 Vietnamese | English
 --- | ---
@@ -25,7 +25,7 @@ Telex encoding solves two problems: representing the extended Latin letters, and
 
 Vietnamese has several extended Latin letters. Special character pairs are defined for each letter.
 
-Vietnamese | ASCII input
+Vietnamese | basic Latin input
 --- | ---
 ă | aw
 â | aa
@@ -41,7 +41,7 @@ Vietnamese | ASCII input
 
 Vietnamese words may have a single tone mark.
 
-Vietnamese | ASCII input
+Vietnamese | basic Latin input
 --- | ---
 má | mas
 mà | maf
@@ -57,7 +57,7 @@ Additionally, "z" is reserved for the neutral tone, which has no tone mark. Thus
 
 For example:
 
-ASCII input | Output
+basic Latin input | Output
 --- | ---
 maz | ma
 masz | ma
@@ -70,7 +70,7 @@ To literally insert a character is used for encoding, simply repeat the characte
 
 For example:
 
-ASCII input | Output
+basic Latin input | Output
 --- | ---
 o | o
 oo | ô

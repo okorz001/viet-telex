@@ -2,18 +2,18 @@
 
 A TypeScript module for encoding and decoding Vietnamese text using the Telex input method.
 
-Vietnamese requires diacritical marks to distinguish letters and indicate tone. Telex represents these marks using simple ASCII digraphs, making Vietnamese text typeable on any keyboard. See [docs/telex.md](docs/telex.md) for the full encoding rules.
+Vietnamese requires diacritical marks to distinguish letters and indicate tone. Telex represents these marks using simple basic Latin digraphs, making Vietnamese text typeable on any keyboard. See [docs/telex.md](docs/telex.md) for the full encoding rules.
 
 ## Features
 
-- **Decode**: convert Telex ASCII input into Vietnamese Unicode text
-- **Encode**: convert Vietnamese Unicode text back into Telex ASCII
+- **Decode**: convert Telex basic Latin input into Vietnamese Unicode text
+- **Encode**: convert Vietnamese Unicode text back into Telex basic Latin
 
 ## API
 
 ### `decode(text: string): string`
 
-Takes ASCII text using Telex digraphs and returns Vietnamese Unicode text.
+Takes basic Latin text using Telex digraphs and returns Vietnamese Unicode text.
 
 ```ts
 decode("owng"); // → "ơng"
@@ -22,7 +22,7 @@ decode("Ddowng"); // → "Đông"
 
 ### `encode(text: string): string`
 
-Takes Vietnamese Unicode text and returns ASCII text using Telex digraphs.
+Takes Vietnamese Unicode text and returns basic Latin text using Telex digraphs.
 
 ```ts
 encode("ơng"); // → "owng"
