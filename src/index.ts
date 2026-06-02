@@ -61,12 +61,29 @@ const NUCLEI: Record<string, number> = {
   uya: 1,
   ưa: 1,
   ươ: 1,
+  oo: 1,
   yêu: 1,
   // nucleus at index 2
   uyê: 2,
 };
 
 const VOWELS = new Set("aăâeêioôơuưy");
+
+// ASCII letters present in the Vietnamese 29-letter alphabet (excludes f, j, w, z)
+const VIETNAMESE_LETTERS = new Set("abcdeghiklmnopqrstuvxy");
+
+// Valid Vietnamese syllable-final consonant sequences; empty string = open syllable
+const VALID_FINAL_CONSONANTS = new Set([
+  "",
+  "c",
+  "ch",
+  "m",
+  "n",
+  "ng",
+  "nh",
+  "p",
+  "t",
+]);
 
 function isVowel(ch: string): boolean {
   return VOWELS.has(ch.toLowerCase());
@@ -119,6 +136,32 @@ function applyTone(word: string, combiningMark: string): string {
 }
 
 /**
+ * Options for {@link decode}.
+ */
+export interface DecodeOptions {
+  /**
+   * When `true`, enables strict Vietnamese validation:
+   *
+   * - ASCII characters not in the Vietnamese 29-letter alphabet (e.g. `f`, `j`,
+   *   `w`, `z`) are silently discarded from the output.
+   * - Digraph escape sequences (e.g. `ooo`→`oo`) are only honored when the
+   *   escaped pair is a recognized Vietnamese vowel cluster in {@link NUCLEI};
+   *   otherwise the digraph is decoded normally and the trailing escape character
+   *   is subject to the same discarding rule above. Of the seven Telex digraphs,
+   *   only the `oo` escape produces a valid Vietnamese sequence and is honored.
+   * - After decoding, any trailing consonants that do not form a valid
+   *   Vietnamese syllable-final sequence (`c`, `ch`, `m`, `n`, `ng`, `nh`,
+   *   `p`, `t`, or open syllable) are trimmed.
+   *
+   * Tone letters (`f`, `j`, `z`) at the end of a word are consumed by the
+   * tone-detection pass before strict rules apply and are never discarded.
+   *
+   * @defaultValue `false`
+   */
+  strict?: boolean;
+}
+
+/**
  * Decodes ASCII Telex input into Unicode Vietnamese text (NFC).
  *
  * Input is split on word boundaries; each word token is processed independently
@@ -135,20 +178,50 @@ function applyTone(word: string, combiningMark: string): string {
  *   the literal characters instead (e.g. `ooo`→`oo`, `catss`→`cats`).
  *
  * @param text - ASCII text using Telex encoding
+ * @param options - Optional decoding options; see {@link DecodeOptions}
  * @returns Vietnamese Unicode text in NFC form
  */
-export function decode(text: string): string {
+export function decode(text: string, options?: DecodeOptions): string {
+  const strict = options?.strict ?? false;
   // Tokenize into alternating [word, separator, word, ...] segments
   const tokens = text.split(/([^a-zA-Z]+)/);
   return tokens
     .map((token) => {
       if (!token || /[^a-zA-Z]/.test(token)) return token; // separator
-      return decodeWord(token);
+      return decodeWord(token, strict);
     })
     .join("");
 }
 
-function decodeWord(word: string): string {
+// After decoding, trim any trailing characters that do not form a valid
+// Vietnamese syllable-final consonant sequence. Operates on undecorated
+// (pre-tone) text so that isVowel matches correctly.
+function trimFinalConsonants(word: string): string {
+  const lower = word.toLowerCase();
+  let clusterStart = -1;
+  let clusterEnd = -1;
+  let i = 0;
+  while (i < lower.length) {
+    if (isVowel(lower[i])) {
+      const start = i;
+      while (i < lower.length && isVowel(lower[i])) i++;
+      if (i - start > clusterEnd - clusterStart) {
+        clusterStart = start;
+        clusterEnd = i;
+      }
+    } else {
+      i++;
+    }
+  }
+  if (clusterStart === -1) return word; // no vowel — nothing to trim
+  let suffix = word.slice(clusterEnd);
+  while (!VALID_FINAL_CONSONANTS.has(suffix.toLowerCase())) {
+    suffix = suffix.slice(0, -1);
+  }
+  return word.slice(0, clusterEnd) + suffix;
+}
+
+function decodeWord(word: string, strict: boolean): string {
   // Detect tone letter at end (may be escaped by doubling)
   let tone: string | null = null;
   let raw = word;
@@ -180,24 +253,40 @@ function decodeWord(word: string): string {
     const digraph = raw.slice(i, i + 2).toLowerCase();
     const decoded = DIGRAPHS[digraph];
     if (decoded !== undefined) {
+      const isUpper =
+        raw[i] === raw[i].toUpperCase() && raw[i] !== raw[i].toLowerCase();
       if (
         raw[i + 2] !== undefined &&
         raw[i + 2].toLowerCase() === raw[i + 1].toLowerCase()
       ) {
-        // escape: repeated second char cancels decoding, e.g. "ooo" → "oo"
-        result += raw[i] + raw[i + 1];
-        i += 3;
+        // escape candidate: only honor if not strict, or if the pair is a
+        // recognized Vietnamese vowel cluster (only "oo" qualifies among the
+        // seven Telex digraphs)
+        if (!strict || NUCLEI[digraph] !== undefined) {
+          result += raw[i] + raw[i + 1];
+          i += 3;
+        } else {
+          // escape rejected: decode digraph normally; escape char processed next
+          result += isUpper ? decoded.toUpperCase() : decoded;
+          i += 2;
+        }
       } else {
         // digraph match: decode and preserve case of first char
-        const isUpper =
-          raw[i] === raw[i].toUpperCase() && raw[i] !== raw[i].toLowerCase();
         result += isUpper ? decoded.toUpperCase() : decoded;
         i += 2;
       }
     } else {
-      result += raw[i];
+      if (!strict || VIETNAMESE_LETTERS.has(raw[i].toLowerCase())) {
+        result += raw[i];
+      }
       i += 1;
     }
+  }
+
+  // Trim invalid final consonants before tone application so isVowel works on
+  // undecorated characters
+  if (strict) {
+    result = trimFinalConsonants(result);
   }
 
   // Apply tone
