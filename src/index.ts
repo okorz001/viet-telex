@@ -26,6 +26,8 @@ const ENCODE_TONE: Record<string, string> = Object.fromEntries(
 
 // Maps vowel cluster (lowercase) to index of nucleus vowel within that cluster.
 // Unlisted clusters fall back to: last vowel before any trailing consonant.
+// Entries are ordered by nucleus index, then Vietnamese alphabetical order
+// (a ă â e ê i o ô ơ u ư y) within each group.
 const NUCLEI: Record<string, number> = {
   // nucleus at index 0
   ai: 0,
@@ -54,6 +56,7 @@ const NUCLEI: Record<string, number> = {
   oă: 1,
   oe: 1,
   oeo: 1,
+  oo: 1,
   ua: 1,
   uâ: 1,
   uê: 1,
@@ -61,7 +64,6 @@ const NUCLEI: Record<string, number> = {
   uya: 1,
   ưa: 1,
   ươ: 1,
-  oo: 1,
   yêu: 1,
   // nucleus at index 2
   uyê: 2,
