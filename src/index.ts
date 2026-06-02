@@ -119,7 +119,23 @@ function applyTone(word: string, combiningMark: string): string {
 }
 
 /**
- * Decodes ASCII Telex input into Unicode Vietnamese text.
+ * Decodes ASCII Telex input into Unicode Vietnamese text (NFC).
+ *
+ * Input is split on word boundaries; each word token is processed independently
+ * while separators (spaces, punctuation, digits) pass through unchanged.
+ *
+ * Within each word:
+ * - Digraphs (`aw`→ă, `aa`→â, `dd`→đ, `ee`→ê, `oo`→ô, `ow`→ơ, `uw`→ư) are
+ *   replaced with their Vietnamese letter, preserving the case of the first character.
+ * - A tone letter at the end of the word (`s` sắc, `f` huyền, `r` hỏi, `x` ngã,
+ *   `j` nặng, `z` ngang) is consumed and the corresponding diacritic is placed on
+ *   the nucleus vowel of the syllable. When multiple tone letters appear, the last
+ *   one wins; `z` removes any previously specified tone.
+ * - Doubling the second character of a digraph or tone letter escapes it, producing
+ *   the literal characters instead (e.g. `ooo`→`oo`, `catss`→`cats`).
+ *
+ * @param text - ASCII text using Telex encoding
+ * @returns Vietnamese Unicode text in NFC form
  */
 export function decode(text: string): string {
   // Tokenize into alternating [word, separator, word, ...] segments
@@ -193,7 +209,23 @@ function decodeWord(word: string): string {
 }
 
 /**
- * Encodes Unicode Vietnamese text into ASCII Telex.
+ * Encodes Unicode Vietnamese text (NFC) into ASCII Telex.
+ *
+ * Input is split on word boundaries; each word token is processed independently
+ * while separators (spaces, punctuation, digits) pass through unchanged.
+ *
+ * Within each word:
+ * - Extended Vietnamese letters (ă, â, đ, ê, ô, ơ, ư) are replaced with their
+ *   two-character Telex digraphs, preserving the case of the first character.
+ * - Tone diacritics are removed from vowels and a single tone letter is appended
+ *   at the end of the word (`s` sắc, `f` huyền, `r` hỏi, `x` ngã, `j` nặng).
+ * - A plain `o` immediately followed by another plain `o` is escaped as `ooo` so
+ *   that a subsequent `decode` call does not misinterpret the pair as `ô`.
+ *
+ * `decode(encode(text)) === text` for any NFC Vietnamese text.
+ *
+ * @param text - Vietnamese Unicode text in NFC form
+ * @returns ASCII text using Telex encoding
  */
 export function encode(text: string): string {
   // Process word by word; emit tone letter at end of each word
