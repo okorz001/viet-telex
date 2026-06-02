@@ -266,9 +266,9 @@ function decodeWord(word: string, strict: boolean): string {
           result += raw[i] + raw[i + 1];
           i += 3;
         } else {
-          // escape rejected: decode digraph normally; escape char processed next
+          // escape rejected: decode digraph and discard the escape character
           result += isUpper ? decoded.toUpperCase() : decoded;
-          i += 2;
+          i += 3;
         }
       } else {
         // digraph match: decode and preserve case of first char

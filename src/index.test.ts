@@ -166,16 +166,16 @@ describe("decode strict mode", () => {
       expect(decode("owwr", { strict: true })).toBe("ở");
     });
 
-    it("aaa → âa (aa not a Vietnamese cluster, escape rejected)", () => {
-      expect(decode("aaa", { strict: true })).toBe("âa");
+    it("aaa → â (aa not a Vietnamese cluster, escape and trigger discarded)", () => {
+      expect(decode("aaa", { strict: true })).toBe("â");
     });
 
-    it("ddd → đd (dd not a Vietnamese cluster, escape rejected)", () => {
-      expect(decode("ddd", { strict: true })).toBe("đd");
+    it("ddd → đ (dd not a Vietnamese cluster, escape and trigger discarded)", () => {
+      expect(decode("ddd", { strict: true })).toBe("đ");
     });
 
-    it("eee → êe (ee not a Vietnamese cluster, escape rejected)", () => {
-      expect(decode("eee", { strict: true })).toBe("êe");
+    it("eee → ê (ee not a Vietnamese cluster, escape and trigger discarded)", () => {
+      expect(decode("eee", { strict: true })).toBe("ê");
     });
   });
 
