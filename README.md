@@ -16,19 +16,20 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 Converts basic Latin text using Telex encoding to proper Vietnamese text.
 
 ```ts
-decode("owng");   // → "ơng"
-decode("Ddowng"); // → "Đông"
-decode("mas");    // → "má"
+decode("hoongf"); // → "hồng"
 ```
 
 By default, words that don't match Vietnamese syllable structure pass through unchanged. Strict mode processes every word instead, discarding characters outside the Vietnamese alphabet and trimming invalid final consonants:
 
 ```ts
-decode("za");                    // → "za"  (z is not a valid initial consonant)
-decode("za", { strict: true });  // → "a"   (z discarded)
+decode("za");                     // → "za"   (z is not a valid initial consonant)
+decode("za", { strict: true });   // → "a"    (z discarded)
 
-decode("cad");                    // → "cad" (d is not a valid final consonant)
-decode("cad", { strict: true });  // → "ca"  (d trimmed)
+decode("cad");                    // → "cad"  (d is not a valid final consonant)
+decode("cad", { strict: true });  // → "ca"   (d trimmed)
+
+decode("case");                    // → "case" (not a Vietnamese syllable)
+decode("case", { strict: true });  // → "ca"   (s and e trimmed)
 ```
 
 ### `encode(text: string): string`
@@ -36,8 +37,7 @@ decode("cad", { strict: true });  // → "ca"  (d trimmed)
 Converts Vietnamese text into basic Latin text using Telex encoding.
 
 ```ts
-encode("ơng");  // → "owng"
-encode("Đông"); // → "Ddowng"
+encode("hồng"); // → "hoongf"
 ```
 
 ## Development
