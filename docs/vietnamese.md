@@ -48,11 +48,11 @@ Vietnamese also has many diphthongs and triphthongs. They can be divided into th
 
 These are never used with a final consonant:
 
-> ai ao au ay âu ây eo êu iêu iu ia oai oao oeo oi ôi ơi ua ui ưa ưi ưu uya yêu
+> ai ao au ay âu ây eo êu iêu iu ia oai oao oeo oi ôi ơi ua ui uya ưa ưi ưu yêu
 
 These may be used with a final consonant:
 
-> oa oe uê ươ uy
+> oa oe uê uy
 
 These must be used with a final consonant:
 
@@ -73,6 +73,26 @@ nặng | mạ
 
 Note that only 5 tone marks are used, and the ngang tone is indicated by the lack of any other mark.
 
+## Tone mark placement
+
+Tone marks are always placed on vowels.
+
+There are multiple conventions for where to place tone marks on compound vowels. The following describes the "new style" (kiểu mới).
+
+Tone marks are placed on the first letter of the following:
+
+> ai ao au ay âu ây eo êu ia iu oi ôi ơi ui ưi ưu
+
+Tone marks are placed on the second letter of the following:
+
+> iê iêu oa oai oao oă oe oeo oo ua uâ uê uô uy uya ưa ươ yêu
+
+Tone marks are placed on the third letter of the following:
+
+> uyê
+
 ## Links
 
 * [Vietnamese alphabet](https://en.wikipedia.org/wiki/Vietnamese_alphabet) on Wikipedia
+* [Vietnamese phonology](https://en.wikipedia.org/wiki/Vietnamese_phonology) on Wikipedia
+* [Quy tắc đặt dấu thanh của chữ Quốc ngữ](https://vi.wikipedia.org/wiki/Quy_t%E1%BA%AFc_%C4%91%E1%BA%B7t_d%E1%BA%A5u_thanh_c%E1%BB%A7a_ch%E1%BB%AF_Qu%E1%BB%91c_ng%E1%BB%AF) on Wikipedia (VI)
