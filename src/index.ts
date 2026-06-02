@@ -219,8 +219,9 @@ function decodeWord(word: string): string {
  *   two-character Telex digraphs, preserving the case of the first character.
  * - Tone diacritics are removed from vowels and a single tone letter is appended
  *   at the end of the word (`s` sắc, `f` huyền, `r` hỏi, `x` ngã, `j` nặng).
- * - A plain `o` immediately followed by another plain `o` is escaped as `ooo` so
- *   that a subsequent `decode` call does not misinterpret the pair as `ô`.
+ * - ASCII pairs that form a Telex digraph (e.g. `oo`, `aw`, `ow`) are escaped by
+ *   repeating the second character (e.g. `ooo`, `aww`, `oww`) so that a subsequent
+ *   `decode` call does not misinterpret them as extended letters.
  *
  * `decode(encode(text)) === text` for any NFC Vietnamese text.
  *
@@ -256,6 +257,7 @@ function encodeWord(word: string): string {
   const nfd = word.normalize("NFD");
   let result = "";
   let toneChar = "";
+  let contextChar = ""; // last plain ASCII char decode would see at the current position
   let i = 0;
 
   while (i < nfd.length) {
@@ -300,6 +302,7 @@ function encodeWord(word: string): string {
 
     if (lower === "đ" || lower === "đ") {
       result += isUpper ? "Dd" : "dd";
+      contextChar = ""; // decode consumes "dd" atomically
       i++;
       continue;
     }
@@ -308,28 +311,19 @@ function encodeWord(word: string): string {
       result += isUpper
         ? digraphKey[0].toUpperCase() + digraphKey[1]
         : digraphKey;
+      contextChar = ""; // decode consumes the digraph atomically
       i += 2; // consume base + modifier
       continue;
     }
 
-    // Plain 'o' followed by another plain 'o' (not a Vietnamese extended letter)
-    // needs escaping so decode doesn't turn them into ô
-    if (lower === "o" && !next) {
-      // single o at end, fine
-      result += ch;
-      i++;
-      continue;
+    // Plain ASCII — escape if this char would form an unescaped digraph with the preceding one
+    const potDigraph = contextChar.toLowerCase() + lower;
+    if (contextChar && DIGRAPHS[potDigraph] !== undefined) {
+      result += ch; // duplicate second char to trigger decode's escape mechanism
+      contextChar = "";
+    } else {
+      contextChar = ch;
     }
-    if (lower === "o" && nfd[i + 1] !== undefined) {
-      const nextLower = nfd[i + 1].toLowerCase();
-      if (nextLower === "o" && nfd[i + 2] !== "̂") {
-        // two plain o's — emit escape
-        result += ch + nfd[i + 1] + nfd[i + 1];
-        i += 2;
-        continue;
-      }
-    }
-
     result += ch;
     i++;
   }

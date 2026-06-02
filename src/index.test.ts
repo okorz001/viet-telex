@@ -188,6 +188,36 @@ describe("encode", () => {
     });
   });
 
+  describe("escape sequences", () => {
+    it("aw → aww", () => {
+      expect(encode("aw")).toBe("aww");
+    });
+
+    it("aa → aaa", () => {
+      expect(encode("aa")).toBe("aaa");
+    });
+
+    it("dd → ddd", () => {
+      expect(encode("dd")).toBe("ddd");
+    });
+
+    it("ee → eee", () => {
+      expect(encode("ee")).toBe("eee");
+    });
+
+    it("oo → ooo", () => {
+      expect(encode("oo")).toBe("ooo");
+    });
+
+    it("ow → oww", () => {
+      expect(encode("ow")).toBe("oww");
+    });
+
+    it("uw → uww", () => {
+      expect(encode("uw")).toBe("uww");
+    });
+  });
+
   describe("roundtrip", () => {
     it("decode(encode(x)) === x for Vietnamese text", () => {
       expect(decode(encode("ơng"))).toBe("ơng");
@@ -197,6 +227,16 @@ describe("encode", () => {
     it("encode(decode(x)) === x for Telex input", () => {
       expect(encode(decode("owng"))).toBe("owng");
       expect(encode(decode("Ddowng"))).toBe("Ddowng");
+    });
+
+    it("decode(encode(x)) === x for digraph sequences", () => {
+      expect(decode(encode("aw"))).toBe("aw");
+      expect(decode(encode("aa"))).toBe("aa");
+      expect(decode(encode("dd"))).toBe("dd");
+      expect(decode(encode("ee"))).toBe("ee");
+      expect(decode(encode("oo"))).toBe("oo");
+      expect(decode(encode("ow"))).toBe("ow");
+      expect(decode(encode("uw"))).toBe("uw");
     });
   });
 });
