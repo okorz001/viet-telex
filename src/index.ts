@@ -24,6 +24,43 @@ const ENCODE_TONE: Record<string, string> = Object.fromEntries(
     .map(([k, v]) => [v, k]),
 );
 
+// Vietnamese syllable structure components for Telex-encoded input.
+// Lists are ordered longest-first so Array.find picks the greedy match.
+const INITIAL_CONSONANTS = [
+  "ngh",
+  "ch",
+  "gh",
+  "gi",
+  "kh",
+  "ng",
+  "nh",
+  "ph",
+  "qu",
+  "th",
+  "tr",
+  "dd",
+  "b",
+  "c",
+  "d",
+  "g",
+  "h",
+  "k",
+  "l",
+  "m",
+  "n",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "v",
+  "x",
+];
+const VOWEL_DIGRAPHS = ["aw", "aa", "ee", "oo", "ow", "uw"];
+const SIMPLE_VOWELS = new Set(["a", "e", "i", "o", "u", "y"]);
+const FINAL_CONSONANTS = ["ch", "ng", "nh", "c", "m", "n", "p", "t"];
+const TONE_MARKERS = new Set(["s", "f", "r", "x", "j", "z"]);
+
 // Maps vowel cluster (lowercase) to index of nucleus vowel within that cluster.
 // Unlisted clusters fall back to: last vowel before any trailing consonant.
 // Entries are ordered by nucleus index, then Vietnamese alphabetical order
@@ -137,6 +174,49 @@ function applyTone(word: string, combiningMark: string): string {
   ).normalize("NFC");
 }
 
+function isVietnamese(word: string): boolean {
+  const s = word.toLowerCase();
+
+  // Digraph escape sequences are always decoded regardless of syllable structure.
+  for (let i = 0; i + 2 < s.length; i++) {
+    if (DIGRAPHS[s.slice(i, i + 2)] !== undefined && s[i + 2] === s[i + 1])
+      return true;
+  }
+
+  let pos = 0;
+
+  if (!SIMPLE_VOWELS.has(s[0] ?? "")) {
+    const match = INITIAL_CONSONANTS.find((c) => s.startsWith(c));
+    if (!match) return false;
+    pos = match.length;
+    if (pos === s.length) return true; // consonant-only word (dd → đ)
+  }
+
+  // Greedy vowel cluster: try VOWEL_DIGRAPHS first at each position, then
+  // simple vowels. This supports diphthongs and triphthongs (e.g. Nguyeenx).
+  let hadVowel = false;
+  while (pos < s.length) {
+    const vDg = VOWEL_DIGRAPHS.find((d) => s.startsWith(d, pos));
+    if (vDg) {
+      pos += vDg.length;
+      hadVowel = true;
+    } else if (SIMPLE_VOWELS.has(s[pos])) {
+      pos += 1;
+      hadVowel = true;
+    } else {
+      break;
+    }
+  }
+  if (!hadVowel) return false;
+
+  const fc = FINAL_CONSONANTS.find((c) => s.startsWith(c, pos));
+  if (fc) pos += fc.length;
+
+  while (pos < s.length && TONE_MARKERS.has(s[pos])) pos++;
+
+  return pos === s.length;
+}
+
 /**
  * Options for {@link decode}.
  */
@@ -224,6 +304,7 @@ function trimFinalConsonants(word: string): string {
 }
 
 function decodeWord(word: string, strict: boolean): string {
+  if (!strict && !isVietnamese(word)) return word;
   // Detect tone letter at end (may be escaped by doubling)
   let tone: string | null = null;
   let raw = word;
