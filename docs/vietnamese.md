@@ -12,7 +12,7 @@ The Vietnamese alphabet has 29 letters:
 
 > f j w z
 
-## Word structure
+## Word Structure
 
 A Vietnamese word consists of:
 
@@ -73,7 +73,7 @@ nặng | mạ
 
 Note that only 5 tone marks are used, and the ngang tone is indicated by the lack of any other mark.
 
-## Tone mark placement
+## Tone Mark Placement
 
 Tone marks are always placed on vowels.
 

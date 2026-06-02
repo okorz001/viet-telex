@@ -25,6 +25,10 @@ After creating a pull request, always subscribe to it with `subscribe_pr_activit
 
 When checking CI results, always fetch annotations even on passing runs — a green conclusion can still carry warnings that need attention.
 
+## Docs Style
+
+All Markdown section headers and table headers must use title case.
+
 ## Code Style
 
 All exported symbols must have a full TSDoc comment describing what the function does, its parameters (`@param`), and its return value (`@returns`). One-line summaries are not sufficient for exported API.

@@ -21,11 +21,11 @@ dầu | oil
 
 Telex encoding solves two problems: representing the extended Latin letters, and tone marks.
 
-### Extended Latin letters
+### Extended Latin Letters
 
 Vietnamese has several extended Latin letters. Special character pairs are defined for each letter.
 
-Vietnamese | input sequence
+Vietnamese | Input Sequence
 --- | ---
 ă | aw
 â | aa
@@ -41,7 +41,7 @@ Vietnamese | input sequence
 
 Vietnamese words may have a single tone mark.
 
-Vietnamese | input sequence
+Vietnamese | Input Sequence
 --- | ---
 má | mas
 mà | maf
@@ -57,7 +57,7 @@ Additionally, "z" is reserved for the neutral tone, which has no tone mark. Thus
 
 For example:
 
-input sequence | Output
+Input Sequence | Output
 --- | ---
 maz | ma
 masz | ma
@@ -70,7 +70,7 @@ To literally insert a character is used for encoding, simply repeat the characte
 
 For example:
 
-input sequence | Output
+Input Sequence | Output
 --- | ---
 o | o
 oo | ô
