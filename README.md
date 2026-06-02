@@ -1,8 +1,8 @@
 # viet-telex
 
-A TypeScript module for encoding and decoding Vietnamese text using the Telex input method.
+A TypeScript module for Telex encoding of Vietnamese text.
 
-Vietnamese requires diacritical marks to distinguish letters and indicate tone. Telex represents these marks using basic Latin digraphs, making Vietnamese text typeable on any keyboard. See [docs/telex.md](docs/telex.md) for the full encoding rules.
+Vietnamese requires diacritical marks to distinguish letters and indicate tone. Telex represents these marks using basic Latin letters, making Vietnamese text typeable on the common QWERTY keyboard.
 
 ## Features
 
@@ -13,11 +13,12 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 
 ### `decode(text: string, options?: DecodeOptions): string`
 
-Takes basic Latin text using Telex digraphs and returns proper Vietnamese text.
+Converts basic Latin text using Telex encoding to proper Vietnamese text.
 
 ```ts
 decode("owng");   // → "ơng"
 decode("Ddowng"); // → "Đông"
+decode("mas");    // → "má"
 ```
 
 By default, words that don't match Vietnamese syllable structure pass through unchanged. Strict mode processes every word instead, discarding characters outside the Vietnamese alphabet and trimming invalid final consonants:
@@ -32,7 +33,7 @@ decode("cad", { strict: true });  // → "ca"  (d trimmed)
 
 ### `encode(text: string): string`
 
-Takes proper Vietnamese text and returns basic Latin text using Telex digraphs.
+Converts Vietnamese text into basic Latin text using Telex encoding.
 
 ```ts
 encode("ơng");  // → "owng"
