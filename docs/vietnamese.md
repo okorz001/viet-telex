@@ -8,7 +8,7 @@ The Vietnamese alphabet has 29 letters:
 
 > a ă â b c d đ e ê g h i k l m n o ô ơ p q r s t u ư v x y
 
-4 letters from the English alphabet are not used in Vietnamese:
+4 letters from the basic Latin alphabet are not used in Vietnamese:
 
 > f j w z
 
