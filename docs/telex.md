@@ -1,6 +1,6 @@
 # Telex Encoding
 
-This document explains how the Telex encoding represents Vietnamese in simple basic Latin.
+This document explains how the Telex encoding represents Vietnamese in basic Latin.
 
 Vietnamese uses a Latin-based alphabet, but uses diacritical marks to both distinguish letters and indicate tone.
 
@@ -8,7 +8,7 @@ Vietnamese uses a Latin-based alphabet, but uses diacritical marks to both disti
 
 Diacritical marks are critical to understanding Vietnamese text. There are many word collisions without them, and it can be difficult to identify the intended word.
 
-For example, the following words are all reduced in simple basic Latin to "dau":
+For example, the following words are all reduced in basic Latin to "dau":
 
 Vietnamese | English
 --- | ---

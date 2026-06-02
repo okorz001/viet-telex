@@ -2,7 +2,7 @@
 
 A TypeScript module for encoding and decoding Vietnamese text using the Telex input method.
 
-Vietnamese requires diacritical marks to distinguish letters and indicate tone. Telex represents these marks using simple basic Latin digraphs, making Vietnamese text typeable on any keyboard. See [docs/telex.md](docs/telex.md) for the full encoding rules.
+Vietnamese requires diacritical marks to distinguish letters and indicate tone. Telex represents these marks using basic Latin digraphs, making Vietnamese text typeable on any keyboard. See [docs/telex.md](docs/telex.md) for the full encoding rules.
 
 ## Features
 
