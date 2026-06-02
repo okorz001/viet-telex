@@ -25,7 +25,7 @@ After creating a pull request, always subscribe to it with `subscribe_pr_activit
 
 When checking CI results, always fetch annotations even on passing runs — a green conclusion can still carry warnings that need attention.
 
-When adding a new GitHub Actions action, look up its latest stable release and use that version tag. Do not guess or reuse version tags from existing workflow steps.
+When adding a GitHub Actions action, use the same version already used by other jobs in the workflow files if it exists. Only when introducing an action not yet used anywhere should you look up and use its latest stable release.
 
 ## Code Style
 
