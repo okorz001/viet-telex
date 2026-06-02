@@ -6,18 +6,28 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 
 ## Features
 
-- **Decode**: convert Telex basic Latin input into proper Vietnamese text
+- **Decode**: convert Telex basic Latin input into proper Vietnamese text; supports an optional strict mode that enforces pure Vietnamese output
 - **Encode**: convert proper Vietnamese text back into Telex basic Latin
 
 ## API
 
-### `decode(text: string): string`
+### `decode(text: string, options?: DecodeOptions): string`
 
 Takes basic Latin text using Telex digraphs and returns proper Vietnamese text.
 
 ```ts
-decode("owng"); // → "ơng"
+decode("owng");   // → "ơng"
 decode("Ddowng"); // → "Đông"
+```
+
+By default, words that don't match Vietnamese syllable structure pass through unchanged. Strict mode processes every word instead, discarding characters outside the Vietnamese alphabet and trimming invalid final consonants:
+
+```ts
+decode("za");                    // → "za"  (z is not a valid initial consonant)
+decode("za", { strict: true });  // → "a"   (z discarded)
+
+decode("cad");                    // → "cad" (d is not a valid final consonant)
+decode("cad", { strict: true });  // → "ca"  (d trimmed)
 ```
 
 ### `encode(text: string): string`
@@ -25,7 +35,7 @@ decode("Ddowng"); // → "Đông"
 Takes proper Vietnamese text and returns basic Latin text using Telex digraphs.
 
 ```ts
-encode("ơng"); // → "owng"
+encode("ơng");  // → "owng"
 encode("Đông"); // → "Ddowng"
 ```
 
