@@ -48,11 +48,11 @@ Vietnamese also has many diphthongs and triphthongs. They can be divided into th
 
 These are never used with a final consonant:
 
-> ai ao au ay âu ây eo êu iêu iu ia oai oao oeo oi ôi ơi ua ui ưa ưi ưu uya yêu
+> ai ao au ay âu ây eo êu iêu iu ia oai oao oeo oi ôi ơi ua ui uya ưa ưi ưu yêu
 
 These may be used with a final consonant:
 
-> oa oe uê ươ uy
+> oa oe uê uy
 
 These must be used with a final consonant:
 
@@ -73,57 +73,26 @@ nặng | mạ
 
 Note that only 5 tone marks are used, and the ngang tone is indicated by the lack of any other mark.
 
-## Tone Mark Placement
+## Tone mark placement
 
-The tone mark is placed on the **nucleus vowel** of the syllable — the phonologically prominent vowel. For single-vowel syllables this is trivial; for diphthongs and triphthongs the nucleus position must be looked up.
+Tone marks are always placed on vowels.
 
-### Off-glide diphthongs (nucleus is the first vowel)
+There are multiple conventions for where to place tone marks on compound vowels. The following describes the "new style" (kiểu mới).
 
-These end in a glide (`i`, `u`, or `y`), so the first vowel carries the mark:
+Tone marks are placed on the first letter of the following:
 
-> ai ao au ay âu ây eo êu iu oi ôi ơi ui ưi ưu
+> ai ao au ay âu ây eo êu ia iu oi ôi ơi ui ưi ưu
 
-Examples: `mái` (not `maí`), `tối` (not `toí`)
+Tone marks are placed on the second letter of the following:
 
-### On-glide diphthongs (nucleus is the second vowel)
+> iê iêu oa oai oao oă oe oeo oo ua uâ uê uô uy uya ưa ươ yêu
 
-These begin with a semivowel (`o` or `u`/`ư`), so the second vowel carries the mark:
+Tone marks are placed on the third letter of the following:
 
-> ia oa oe ua uê ưa
-
-Examples: `hoá` (not `hóa`), `mía` (not `míá`)
-
-### Special case
-
-`uy` — nucleus is `u` (first position): `túy`, `húy`
-
-### Triphthongs
-
-Nucleus | Clusters
---- | ---
-`a` | oai oao
-`e` | oeo
-`ê` | iêu yêu
-`y` | uya
-
-Example: `ngoài` (mark on `a`)
-
-### Clusters requiring a final consonant
-
-These are the long-vowel clusters that always pair with a final consonant. The nucleus is the second (long) vowel:
-
-Nucleus | Clusters
---- | ---
-`ê` | iê uyê
-`â` | uâ
-`ô` | uô
-`ơ` | ươ
-`ă` | oă
-
-Example: `tiến` (mark on `ê`), `quyền` (mark on `ê`)
+> uyê
 
 ## Links
 
 * [Vietnamese alphabet](https://en.wikipedia.org/wiki/Vietnamese_alphabet) on Wikipedia
 * [Vietnamese phonology](https://en.wikipedia.org/wiki/Vietnamese_phonology) on Wikipedia
-* [Tone (linguistics)](https://en.wikipedia.org/wiki/Tone_(linguistics)) on Wikipedia
+* [Quy tắc đặt dấu thanh của chữ Quốc ngữ](https://vi.wikipedia.org/wiki/Quy_t%E1%BA%AFc_%C4%91%E1%BA%B7t_d%E1%BA%A5u_thanh_c%E1%BB%A7a_ch%E1%BB%AF_Qu%E1%BB%91c_ng%E1%BB%AF) on Wikipedia (VI)
