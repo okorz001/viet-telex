@@ -61,7 +61,7 @@ const NUCLEI: Record<string, number> = {
   uya: 1,
   // Clusters requiring final consonant (nucleus is long vowel at index 1)
   iê: 1,
-  uyê: 1,
+  uyê: 2,
   uâ: 1,
   uô: 1,
   ươ: 1,
