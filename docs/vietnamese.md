@@ -16,7 +16,7 @@ The Vietnamese alphabet has 29 letters:
 
 A Vietnamese word consists of:
 
-* An optional starting consonant
+* An optional initial consonant
 * A vowel
 * An optional final consonant
 
@@ -34,7 +34,7 @@ Note that i and u are individually not consonants, but are part of consonant dig
 
 ### Final Consonants
 
-All consonants are valid starting consonants. However, only the following are valid final consonants:
+All consonants are valid initial consonants. However, only the following are valid final consonants:
 
 > c ch m n ng nh p t
 
