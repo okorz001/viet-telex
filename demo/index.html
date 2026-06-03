@@ -3,40 +3,66 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Decode Test</title>
+    <title>viet-telex decode</title>
     <style>
       body {
         font-family: sans-serif;
-        max-width: 600px;
+        max-width: 900px;
         margin: 2rem auto;
         padding: 0 1rem;
+      }
+      #controls {
+        margin-bottom: 0.75rem;
+      }
+      #controls label {
+        margin-right: 1rem;
+        cursor: pointer;
+      }
+      #panes {
+        display: flex;
+        gap: 0.75rem;
+        align-items: stretch;
       }
       textarea,
       #output {
         box-sizing: border-box;
-        width: 100%;
+        flex: 1;
+        width: 0;
         font-family: monospace;
         font-size: 1.2rem;
       }
+      textarea {
+        resize: none;
+      }
       #output {
         border: 1px solid #ccc;
-        min-height: 2em;
         padding: 0.4rem;
         white-space: pre-wrap;
+        overflow-y: auto;
       }
     </style>
   </head>
   <body>
-    <h1>Decode Test</h1>
-    <textarea id="input" rows="4" placeholder="Type Telex here..." autofocus></textarea>
-    <div id="output"></div>
+    <h1>viet-telex decode</h1>
+    <div id="controls">
+      <label><input type="checkbox" id="strict" /> strict</label>
+    </div>
+    <div id="panes">
+      <textarea id="input" placeholder="Type Telex here..." autofocus></textarea>
+      <div id="output"></div>
+    </div>
     <script type="module">
       import { decode } from "../dist/index.js";
       const input = document.getElementById("input");
       const output = document.getElementById("output");
-      input.addEventListener("input", () => {
-        output.textContent = decode(input.value);
-      });
+      const strict = document.getElementById("strict");
+
+      function update() {
+        output.textContent = decode(input.value, { strict: strict.checked });
+      }
+
+      input.addEventListener("input", update);
+      strict.addEventListener("change", update);
     </script>
   </body>
 </html>
