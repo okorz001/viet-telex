@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Decode Test</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      textarea,
+      #output {
+        box-sizing: border-box;
+        width: 100%;
+        font-family: monospace;
+        font-size: 1.2rem;
+      }
+      #output {
+        border: 1px solid #ccc;
+        min-height: 2em;
+        padding: 0.4rem;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Decode Test</h1>
+    <textarea id="input" rows="4" placeholder="Type Telex here..." autofocus></textarea>
+    <div id="output"></div>
+    <script type="module">
+      import { decode } from "../dist/index.js";
+      const input = document.getElementById("input");
+      const output = document.getElementById("output");
+      input.addEventListener("input", () => {
+        output.textContent = decode(input.value);
+      });
+    </script>
+  </body>
+</html>
