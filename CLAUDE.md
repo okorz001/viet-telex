@@ -27,15 +27,15 @@ When checking CI results, always fetch annotations even on passing runs — a gr
 
 When adding a GitHub Actions action, use the same version already used by other jobs in the workflow files if it exists. Only when introducing an action not yet used anywhere should you look up and use its latest stable release.
 
+## Docs Style
+
+All Markdown section headers and table headers must use title case.
+
 ## Code Style
 
 All exported symbols must have a full TSDoc comment describing what the function does, its parameters (`@param`), and its return value (`@returns`). One-line summaries are not sufficient for exported API.
 
-## Telex Encoding Summary
+## Links
 
-Telex maps ASCII digraphs to Vietnamese diacritical letters and tone marks:
-
-- Extended letters: `aw`→ă, `aa`→â, `dd`→đ, `ee`→ê, `oo`→ô, `ow`→ơ, `uw`→ư
-- Tones (appended after the vowel): `s`→´ (sắc), `f`→\` (huyền), `r`→? (hỏi), `x`→~ (ngã), `j`→. (nặng), `z`→neutral (removes tone)
-- Escapes: repeating a trigger character a second time cancels the encoding and inserts the literal character (e.g. `ooo` → `oo`, `catss` → `cats`)
-- A second tone overwrites the first; `z` clears any tone
+- [docs/telex.md](docs/telex.md) — Telex encoding rules
+- [docs/vietnamese.md](docs/vietnamese.md) — Vietnamese language and word structure
