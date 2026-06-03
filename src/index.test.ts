@@ -216,6 +216,10 @@ describe("decode strict mode", () => {
       expect(decode("case", { strict: true })).toBe("cá");
     });
 
+    it("cafes → cá (end tone s wins over embedded tone f, e trimmed)", () => {
+      expect(decode("cafes", { strict: true })).toBe("cá");
+    });
+
     it("cang → cang (ng is a valid final consonant)", () => {
       expect(decode("cang", { strict: true })).toBe("cang");
     });

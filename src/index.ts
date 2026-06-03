@@ -339,6 +339,12 @@ function decodeWord(word: string, strict: boolean): string {
 
   // Decode digraphs in the remaining token
   let result = "";
+  // In strict mode, track the first inline tone marker (f, j, z) that is not
+  // in the Vietnamese alphabet. When found, record the result length at that
+  // point so we can truncate everything after it (it marks the end of the
+  // syllable body) and use it as a fallback tone if no end-of-word tone exists.
+  let inlineToneChar: string | null = null;
+  let inlineToneTruncPos = -1;
   let i = 0;
   while (i < raw.length) {
     const digraph = raw.slice(i, i + 2).toLowerCase();
@@ -367,11 +373,26 @@ function decodeWord(word: string, strict: boolean): string {
         i += 2;
       }
     } else {
-      if (!strict || VIETNAMESE_LETTERS.has(raw[i].toLowerCase())) {
+      const ch = raw[i].toLowerCase();
+      if (!strict || VIETNAMESE_LETTERS.has(ch)) {
         result += raw[i];
+      } else if (strict && inlineToneTruncPos === -1 && ch in TONES) {
+        // Non-Vietnamese tone marker (f, j, z) after a vowel signals the end
+        // of the syllable body; record the truncation point and capture as a
+        // potential tone. Markers before any vowel are simply discarded.
+        if (result.length > 0 && isVowel(result[result.length - 1])) {
+          inlineToneTruncPos = result.length;
+          inlineToneChar = ch;
+        }
       }
       i += 1;
     }
+  }
+
+  // In strict mode, apply any inline tone truncation found during decoding
+  if (strict && inlineToneTruncPos !== -1) {
+    result = result.slice(0, inlineToneTruncPos);
+    if (tone === null) tone = inlineToneChar;
   }
 
   // Trim invalid final consonants before tone application so isVowel works on
