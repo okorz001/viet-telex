@@ -173,7 +173,7 @@ function applyTone(word: string, combiningMark: string): string {
   ).normalize("NFC");
 }
 
-function isVietnamese(word: string): boolean {
+function isVietnamese(word: string, lenientTones = false): boolean {
   const s = word.toLowerCase();
 
   // Digraph escape sequences are always decoded regardless of syllable structure.
@@ -202,6 +202,8 @@ function isVietnamese(word: string): boolean {
     } else if (SIMPLE_VOWELS.has(s.charAt(pos))) {
       pos += 1;
       hadVowel = true;
+    } else if (lenientTones && hadVowel && TONE_MARKERS.has(s.charAt(pos))) {
+      pos += 1;
     } else {
       break;
     }
@@ -241,6 +243,18 @@ export interface DecodeOptions {
    * @defaultValue `false`
    */
   strict?: boolean;
+  /**
+   * When `true`, tone mark letters (`f`, `j`, `r`, `s`, `x`, `z`) are allowed
+   * to appear anywhere in the input after a vowel without failing the Vietnamese
+   * syllable check. This lets inputs like `mafu` be decoded as `màu` even though
+   * the tone letter appears mid-word rather than at the end.
+   *
+   * Has no effect on the position of the tone mark in the output — the last tone
+   * letter in the word still determines the tone, as usual.
+   *
+   * @defaultValue `!strict` (enabled when strict mode is off)
+   */
+  lenientTones?: boolean;
 }
 
 /**
@@ -265,12 +279,13 @@ export interface DecodeOptions {
  */
 export function decode(text: string, options?: DecodeOptions): string {
   const strict = options?.strict ?? false;
+  const lenientTones = options?.lenientTones ?? !strict;
   // Tokenize into alternating [word, separator, word, ...] segments
   const tokens = text.split(/([^a-zA-Z]+)/);
   return tokens
     .map((token) => {
       if (!token || /[^a-zA-Z]/.test(token)) return token; // separator
-      return decodeWord(token, strict);
+      return decodeWord(token, strict, lenientTones);
     })
     .join("");
 }
@@ -310,8 +325,12 @@ function trimFinalConsonants(word: string): {
   return { word: word.slice(0, clusterEnd) + suffix, tone: embeddedTone };
 }
 
-function decodeWord(word: string, strict: boolean): string {
-  if (!strict && !isVietnamese(word)) return word;
+function decodeWord(
+  word: string,
+  strict: boolean,
+  lenientTones = false,
+): string {
+  if (!strict && !isVietnamese(word, lenientTones)) return word;
   // Detect tone letter at end (may be escaped by doubling)
   let tone: string | null = null;
   let raw = word;
@@ -319,6 +338,7 @@ function decodeWord(word: string, strict: boolean): string {
   // Scan from end for tone letters. Last tone wins; z clears.
   // Keep stripping tone letters from the end until we hit a non-tone char
   // or an escaped pair.
+  let escaped = false;
   while (raw.length >= 1) {
     const last = raw.charAt(raw.length - 1).toLowerCase();
     if (!TONES.has(last)) break;
@@ -328,12 +348,47 @@ function decodeWord(word: string, strict: boolean): string {
       // Escaped tone letter — strip one copy and output one literal; no tone
       raw = raw.slice(0, -1);
       tone = null; // escape cancels tone
+      escaped = true;
       break;
     }
 
     // Only the rightmost tone letter wins; keep the first one found (right-to-left scan)
     if (tone === null) tone = last;
     raw = raw.slice(0, -1);
+  }
+
+  // In lenient-tones non-strict mode, also scan for tone markers appearing
+  // mid-word between vowels. Only markers that have a vowel somewhere after
+  // them are treated as tones (markers with no following vowel are final
+  // consonants or already handled by the trailing scan above). The last such
+  // marker wins, but only when no trailing tone was already found.
+  if (!strict && lenientTones && tone === null && !escaped) {
+    let midTone: string | null = null;
+    let newRaw = "";
+    let hadVowel = false;
+    for (let k = 0; k < raw.length; k++) {
+      const ch = raw.charAt(k).toLowerCase();
+      if (SIMPLE_VOWELS.has(ch)) {
+        hadVowel = true;
+        newRaw += raw.charAt(k);
+      } else if (hadVowel && TONE_MARKERS.has(ch)) {
+        const hasVowelAfter = raw
+          .slice(k + 1)
+          .split("")
+          .some((c) => SIMPLE_VOWELS.has(c.toLowerCase()));
+        if (hasVowelAfter) {
+          midTone = ch; // last mid-word tone wins
+        } else {
+          newRaw += raw.charAt(k); // trailing marker — keep as-is
+        }
+      } else {
+        newRaw += raw.charAt(k);
+      }
+    }
+    if (midTone !== null) {
+      tone = midTone;
+      raw = newRaw;
+    }
   }
 
   // Decode digraphs in the remaining token
