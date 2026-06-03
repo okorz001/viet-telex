@@ -6,30 +6,26 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 
 ## Features
 
-- **Decode**: convert Telex basic Latin input into proper Vietnamese text; supports an optional strict mode that enforces pure Vietnamese output
+- **Decode**: convert Telex basic Latin input into proper Vietnamese text; an optional strict mode enforces pure Vietnamese output by discarding characters outside the Vietnamese alphabet and trimming invalid final consonants:
+
+  Input Sequence | Default Mode | Strict Mode
+  --- | --- | ---
+  `za` | `za` | `a`
+  `cad` | `cad` | `ca`
+  `case` | `case` | `ca`
+
 - **Encode**: convert proper Vietnamese text back into Telex basic Latin
 
 ## API
 
 ### `decode(text: string, options?: DecodeOptions): string`
 
-Converts basic Latin text using Telex encoding to proper Vietnamese text.
+Converts basic Latin text using Telex encoding to proper Vietnamese text. `DecodeOptions` accepts:
+
+- `strict` (`boolean`, default `false`) — enables strict Vietnamese validation; see Decode in [Features](#features)
 
 ```ts
 decode("hoongf"); // → "hồng"
-```
-
-By default, words that don't match Vietnamese syllable structure pass through unchanged. Strict mode processes every word instead, discarding characters outside the Vietnamese alphabet and trimming invalid final consonants:
-
-```ts
-decode("za");                     // → "za"   (z is not a valid initial consonant)
-decode("za", { strict: true });   // → "a"    (z discarded)
-
-decode("cad");                    // → "cad"  (d is not a valid final consonant)
-decode("cad", { strict: true });  // → "ca"   (d trimmed)
-
-decode("case");                    // → "case" (not a Vietnamese syllable)
-decode("case", { strict: true });  // → "ca"   (s and e trimmed)
 ```
 
 ### `encode(text: string): string`
