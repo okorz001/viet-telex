@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 8 * * 1'
+    - cron: '0 8 * * 1'  # every Monday at 08:00 UTC
 
 jobs:
   analyze:
@@ -15,7 +15,7 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v6
-      - uses: github/codeql-action/init@v3
+      - uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@v4
