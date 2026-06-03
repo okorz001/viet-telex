@@ -227,7 +227,8 @@ export interface DecodeOptions {
    * - ASCII characters not in the Vietnamese 29-letter alphabet (e.g. `f`, `j`,
    *   `w`, `z`) are silently discarded from the output.
    * - Digraph escape sequences (e.g. `ooo`→`oo`) are only honored when the
-   *   escaped pair is a recognized Vietnamese vowel cluster in {@link NUCLEI};
+   *   escaped pair is a recognized Vietnamese vowel cluster (one of `a`, `aw`,
+   *   `aa`, `e`, `ee`, `i`, `o`, `oo`, `ow`, `u`, `uw`, `uo`);
    *   otherwise the digraph is decoded normally and the trailing escape character
    *   is subject to the same discarding rule above. Of the seven Telex digraphs,
    *   only the `oo` escape produces a valid Vietnamese sequence and is honored.
