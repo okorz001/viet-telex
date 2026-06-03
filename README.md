@@ -6,13 +6,14 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 
 ## Features
 
-- **Decode**: convert Telex basic Latin input into proper Vietnamese text; an optional strict mode enforces pure Vietnamese output by discarding characters outside the Vietnamese alphabet and trimming invalid final consonants:
+- **Decode**: convert Telex basic Latin input into proper Vietnamese text
+- **Strict mode**: enforces pure Vietnamese output by discarding characters outside the Vietnamese alphabet and trimming invalid final consonants:
 
   Input Sequence | Default Mode | Strict Mode
   --- | --- | ---
   `za` | `za` | `a`
   `cad` | `cad` | `ca`
-  `case` | `case` | `ca`
+  `case` | `case` | `cá`
 
 - **Encode**: convert proper Vietnamese text back into Telex basic Latin
 
@@ -22,7 +23,7 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 
 Converts basic Latin text using Telex encoding to proper Vietnamese text. `DecodeOptions` accepts:
 
-- `strict` (`boolean`, default `false`) — enables strict Vietnamese validation; see Decode in [Features](#features)
+- `strict` (`boolean`, default `false`) — enables strict mode; see [Features](#features)
 
 ```ts
 decode("hoongf"); // → "hồng"
