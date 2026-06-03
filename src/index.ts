@@ -244,17 +244,21 @@ export interface DecodeOptions {
    */
   strict?: boolean;
   /**
-   * When `true`, tone mark letters (`f`, `j`, `r`, `s`, `x`, `z`) are allowed
-   * to appear anywhere in the input after a vowel without failing the Vietnamese
-   * syllable check. This lets inputs like `mafu` be decoded as `màu` even though
-   * the tone letter appears mid-word rather than at the end.
+   * When `true`, tone mark letters (`f`, `j`, `r`, `s`, `x`, `z`) are only
+   * allowed at the end of a word. A tone letter appearing mid-word after a
+   * vowel will cause the word to fail the Vietnamese syllable check and be
+   * returned as-is.
    *
-   * Has no effect on the position of the tone mark in the output — the last tone
-   * letter in the word still determines the tone, as usual.
+   * When `false` (the default), tone mark letters are allowed anywhere in the
+   * input after a vowel, so inputs like `mafu` decode as `màu` even though the
+   * tone letter appears mid-word rather than at the end.
    *
-   * @defaultValue `!strict` (enabled when strict mode is off)
+   * Has no effect on the position of the tone mark in the output — the last
+   * tone letter in the word still determines the tone, as usual.
+   *
+   * @defaultValue `false`
    */
-  lenientTones?: boolean;
+  strictTones?: boolean;
 }
 
 /**
@@ -279,7 +283,7 @@ export interface DecodeOptions {
  */
 export function decode(text: string, options?: DecodeOptions): string {
   const strict = options?.strict ?? false;
-  const lenientTones = options?.lenientTones ?? !strict;
+  const lenientTones = !(options?.strictTones ?? false);
   // Tokenize into alternating [word, separator, word, ...] segments
   const tokens = text.split(/([^a-zA-Z]+)/);
   return tokens

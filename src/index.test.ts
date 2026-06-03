@@ -233,7 +233,7 @@ describe("decode strict mode", () => {
     });
   });
 
-  describe("lenientTones", () => {
+  describe("strictTones", () => {
     it("mafu → màu (tone letter after vowel, more vowels follow)", () => {
       expect(decode("mafu")).toBe("màu");
     });
@@ -246,8 +246,8 @@ describe("decode strict mode", () => {
       expect(decode("mafu", { strict: true })).toBe("mà");
     });
 
-    it("mafu → mafu when lenientTones: false (explicit opt-out)", () => {
-      expect(decode("mafu", { lenientTones: false })).toBe("mafu");
+    it("mafu → mafu when strictTones: true (explicit opt-in)", () => {
+      expect(decode("mafu", { strictTones: true })).toBe("mafu");
     });
 
     it("mafsu → máu (last tone wins: s after f)", () => {
