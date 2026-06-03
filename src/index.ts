@@ -1,27 +1,25 @@
-const DIGRAPHS: Record<string, string> = {
-  aw: "ă",
-  aa: "â",
-  dd: "đ",
-  ee: "ê",
-  oo: "ô",
-  ow: "ơ",
-  uw: "ư",
-};
+const DIGRAPHS: Map<string, string> = new Map([
+  ["aw", "ă"],
+  ["aa", "â"],
+  ["dd", "đ"],
+  ["ee", "ê"],
+  ["oo", "ô"],
+  ["ow", "ơ"],
+  ["uw", "ư"],
+]);
 
 // Tone letters in Telex and their Unicode combining marks (NFD form)
-const TONES: Record<string, string> = {
-  s: "́", // sắc ´
-  f: "̀", // huyền `
-  r: "̉", // hỏi ̉
-  x: "̃", // ngã ~
-  j: "̣", // nặng .
-  z: "", // ngang (neutral — removes any tone)
-};
+const TONES: Map<string, string> = new Map([
+  ["s", "́"], // sắc ´
+  ["f", "̀"], // huyền `
+  ["r", "̉"], // hỏi ̉
+  ["x", "̃"], // ngã ~
+  ["j", "̣"], // nặng .
+  ["z", ""], // ngang (neutral — removes any tone)
+]);
 
-const ENCODE_TONE: Record<string, string> = Object.fromEntries(
-  Object.entries(TONES)
-    .filter(([, v]) => v !== "")
-    .map(([k, v]) => [v, k]),
+const ENCODE_TONE: Map<string, string> = new Map(
+  [...TONES.entries()].filter(([, v]) => v !== "").map(([k, v]) => [v, k]),
 );
 
 // Vietnamese syllable structure components for Telex-encoded input.
@@ -65,46 +63,46 @@ const TONE_MARKERS = new Set(["s", "f", "r", "x", "j", "z"]);
 // Unlisted clusters fall back to: last vowel before any trailing consonant.
 // Entries are ordered by nucleus index, then Vietnamese alphabetical order
 // (a ă â e ê i o ô ơ u ư y) within each group.
-const NUCLEI: Record<string, number> = {
+const NUCLEI: Map<string, number> = new Map([
   // nucleus at index 0
-  ai: 0,
-  ao: 0,
-  au: 0,
-  ay: 0,
-  âu: 0,
-  ây: 0,
-  eo: 0,
-  êu: 0,
-  iu: 0,
-  oi: 0,
-  ôi: 0,
-  ơi: 0,
-  ui: 0,
-  uy: 0,
-  ưi: 0,
-  ưu: 0,
+  ["ai", 0],
+  ["ao", 0],
+  ["au", 0],
+  ["ay", 0],
+  ["âu", 0],
+  ["ây", 0],
+  ["eo", 0],
+  ["êu", 0],
+  ["iu", 0],
+  ["oi", 0],
+  ["ôi", 0],
+  ["ơi", 0],
+  ["ui", 0],
+  ["uy", 0],
+  ["ưi", 0],
+  ["ưu", 0],
   // nucleus at index 1
-  ia: 1,
-  iê: 1,
-  iêu: 1,
-  oa: 1,
-  oai: 1,
-  oao: 1,
-  oă: 1,
-  oe: 1,
-  oeo: 1,
-  oo: 1,
-  ua: 1,
-  uâ: 1,
-  uê: 1,
-  uô: 1,
-  uya: 1,
-  ưa: 1,
-  ươ: 1,
-  yêu: 1,
+  ["ia", 1],
+  ["iê", 1],
+  ["iêu", 1],
+  ["oa", 1],
+  ["oai", 1],
+  ["oao", 1],
+  ["oă", 1],
+  ["oe", 1],
+  ["oeo", 1],
+  ["oo", 1],
+  ["ua", 1],
+  ["uâ", 1],
+  ["uê", 1],
+  ["uô", 1],
+  ["uya", 1],
+  ["ưa", 1],
+  ["ươ", 1],
+  ["yêu", 1],
   // nucleus at index 2
-  uyê: 2,
-};
+  ["uyê", 2],
+]);
 
 const VOWELS = new Set("aăâeêioôơuưy");
 
@@ -130,7 +128,8 @@ function isVowel(ch: string): boolean {
 
 // Find the index within `vowelCluster` (lowercase) of the nucleus vowel.
 function nucleusIndex(cluster: string): number {
-  if (NUCLEI[cluster] !== undefined) return NUCLEI[cluster];
+  const ni = NUCLEI.get(cluster);
+  if (ni !== undefined) return ni;
   // Fallback: last vowel (index length - 1)
   return cluster.length - 1;
 }
@@ -145,9 +144,9 @@ function applyTone(word: string, combiningMark: string): string {
   let clusterEnd = -1;
   let i = 0;
   while (i < lower.length) {
-    if (isVowel(lower[i])) {
+    if (isVowel(lower.charAt(i))) {
       const start = i;
-      while (i < lower.length && isVowel(lower[i])) i++;
+      while (i < lower.length && isVowel(lower.charAt(i))) i++;
       if (i - start > clusterEnd - clusterStart) {
         clusterStart = start;
         clusterEnd = i;
@@ -165,7 +164,7 @@ function applyTone(word: string, combiningMark: string): string {
 
   // Compose the mark onto the nucleus character
   const before = word.slice(0, nucleusPos);
-  const nucleus = word[nucleusPos];
+  const nucleus = word.charAt(nucleusPos);
   const after = word.slice(nucleusPos + 1);
   return (
     before +
@@ -179,13 +178,13 @@ function isVietnamese(word: string): boolean {
 
   // Digraph escape sequences are always decoded regardless of syllable structure.
   for (let i = 0; i + 2 < s.length; i++) {
-    if (DIGRAPHS[s.slice(i, i + 2)] !== undefined && s[i + 2] === s[i + 1])
+    if (DIGRAPHS.has(s.slice(i, i + 2)) && s.charAt(i + 2) === s.charAt(i + 1))
       return true;
   }
 
   let pos = 0;
 
-  if (!SIMPLE_VOWELS.has(s[0] ?? "")) {
+  if (!SIMPLE_VOWELS.has(s.charAt(0))) {
     const match = INITIAL_CONSONANTS.find((c) => s.startsWith(c));
     if (!match) return false;
     pos = match.length;
@@ -200,7 +199,7 @@ function isVietnamese(word: string): boolean {
     if (vDg) {
       pos += vDg.length;
       hadVowel = true;
-    } else if (SIMPLE_VOWELS.has(s[pos])) {
+    } else if (SIMPLE_VOWELS.has(s.charAt(pos))) {
       pos += 1;
       hadVowel = true;
     } else {
@@ -212,7 +211,7 @@ function isVietnamese(word: string): boolean {
   const fc = FINAL_CONSONANTS.find((c) => s.startsWith(c, pos));
   if (fc) pos += fc.length;
 
-  while (pos < s.length && TONE_MARKERS.has(s[pos])) pos++;
+  while (pos < s.length && TONE_MARKERS.has(s.charAt(pos))) pos++;
 
   return pos === s.length;
 }
@@ -289,9 +288,9 @@ function trimFinalConsonants(word: string): {
   let clusterEnd = -1;
   let i = 0;
   while (i < lower.length) {
-    if (isVowel(lower[i])) {
+    if (isVowel(lower.charAt(i))) {
       const start = i;
-      while (i < lower.length && isVowel(lower[i])) i++;
+      while (i < lower.length && isVowel(lower.charAt(i))) i++;
       if (i - start > clusterEnd - clusterStart) {
         clusterStart = start;
         clusterEnd = i;
@@ -304,8 +303,8 @@ function trimFinalConsonants(word: string): {
   let suffix = word.slice(clusterEnd);
   let embeddedTone: string | null = null;
   while (!VALID_FINAL_CONSONANTS.has(suffix.toLowerCase())) {
-    const lastChar = suffix[suffix.length - 1].toLowerCase();
-    if (embeddedTone === null && lastChar in TONES) embeddedTone = lastChar;
+    const lastChar = suffix.charAt(suffix.length - 1).toLowerCase();
+    if (embeddedTone === null && TONES.has(lastChar)) embeddedTone = lastChar;
     suffix = suffix.slice(0, -1);
   }
   return { word: word.slice(0, clusterEnd) + suffix, tone: embeddedTone };
@@ -321,11 +320,11 @@ function decodeWord(word: string, strict: boolean): string {
   // Keep stripping tone letters from the end until we hit a non-tone char
   // or an escaped pair.
   while (raw.length >= 1) {
-    const last = raw[raw.length - 1].toLowerCase();
-    if (!(last in TONES)) break;
+    const last = raw.charAt(raw.length - 1).toLowerCase();
+    if (!TONES.has(last)) break;
 
     // Check for escape: second-to-last is same letter
-    if (raw.length >= 2 && raw[raw.length - 2].toLowerCase() === last) {
+    if (raw.length >= 2 && raw.charAt(raw.length - 2).toLowerCase() === last) {
       // Escaped tone letter — strip one copy and output one literal; no tone
       raw = raw.slice(0, -1);
       tone = null; // escape cancels tone
@@ -348,19 +347,20 @@ function decodeWord(word: string, strict: boolean): string {
   let i = 0;
   while (i < raw.length) {
     const digraph = raw.slice(i, i + 2).toLowerCase();
-    const decoded = DIGRAPHS[digraph];
+    const decoded = DIGRAPHS.get(digraph);
     if (decoded !== undefined) {
       const isUpper =
-        raw[i] === raw[i].toUpperCase() && raw[i] !== raw[i].toLowerCase();
+        raw.charAt(i) === raw.charAt(i).toUpperCase() &&
+        raw.charAt(i) !== raw.charAt(i).toLowerCase();
       if (
-        raw[i + 2] !== undefined &&
-        raw[i + 2].toLowerCase() === raw[i + 1].toLowerCase()
+        i + 2 < raw.length &&
+        raw.charAt(i + 2).toLowerCase() === raw.charAt(i + 1).toLowerCase()
       ) {
         // escape candidate: only honor if not strict, or if the pair is a
         // recognized Vietnamese vowel cluster (only "oo" qualifies among the
         // seven Telex digraphs)
-        if (!strict || NUCLEI[digraph] !== undefined) {
-          result += raw[i] + raw[i + 1];
+        if (!strict || NUCLEI.has(digraph)) {
+          result += raw.charAt(i) + raw.charAt(i + 1);
           i += 3;
         } else {
           // escape rejected: decode digraph and discard the escape character
@@ -373,14 +373,14 @@ function decodeWord(word: string, strict: boolean): string {
         i += 2;
       }
     } else {
-      const ch = raw[i].toLowerCase();
+      const ch = raw.charAt(i).toLowerCase();
       if (!strict || VIETNAMESE_LETTERS.has(ch)) {
-        result += raw[i];
-      } else if (strict && inlineToneTruncPos === -1 && ch in TONES) {
+        result += raw.charAt(i);
+      } else if (strict && inlineToneTruncPos === -1 && TONES.has(ch)) {
         // Non-Vietnamese tone marker (f, j, z) after a vowel signals the end
         // of the syllable body; record the truncation point and capture as a
         // potential tone. Markers before any vowel are simply discarded.
-        if (result.length > 0 && isVowel(result[result.length - 1])) {
+        if (result.length > 0 && isVowel(result.charAt(result.length - 1))) {
           inlineToneTruncPos = result.length;
           inlineToneChar = ch;
         }
@@ -406,7 +406,7 @@ function decodeWord(word: string, strict: boolean): string {
 
   // Apply tone
   if (tone !== null) {
-    result = applyTone(result, TONES[tone]);
+    result = applyTone(result, TONES.get(tone) ?? "");
   }
 
   return result;
@@ -465,11 +465,12 @@ function encodeWord(word: string): string {
   let i = 0;
 
   while (i < nfd.length) {
-    const ch = nfd[i];
+    const ch = nfd.charAt(i);
 
     // Combining tone mark
-    if (ENCODE_TONE[ch] !== undefined) {
-      toneChar = ENCODE_TONE[ch];
+    const encodedTone = ENCODE_TONE.get(ch);
+    if (encodedTone !== undefined) {
+      toneChar = encodedTone;
       i++;
       continue;
     }
@@ -493,7 +494,7 @@ function encodeWord(word: string): string {
     //   ơ → o + ̛ (horn)
     //   ư → u + ̛
     //   đ → đ (does not decompose further)
-    const next = nfd[i + 1];
+    const next = nfd.charAt(i + 1);
     const digraphKey = (() => {
       if (lower === "a" && next === "̆") return "aw"; // ă
       if (lower === "a" && next === "̂") return "aa"; // â
@@ -522,7 +523,7 @@ function encodeWord(word: string): string {
 
     // Plain ASCII — escape if this char would form an unescaped digraph with the preceding one
     const potDigraph = contextChar.toLowerCase() + lower;
-    if (contextChar && DIGRAPHS[potDigraph] !== undefined) {
+    if (contextChar && DIGRAPHS.has(potDigraph)) {
       result += ch; // duplicate second char to trigger decode's escape mechanism
       contextChar = "";
     } else {
