@@ -7,7 +7,7 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 ## Features
 
 - **Decode**: convert Telex basic Latin input into proper Vietnamese text
-- **Strict mode**: enforces pure Vietnamese output by discarding characters outside the Vietnamese alphabet and trimming invalid final consonants:
+- **Strict mode**: Optionally enforce valid Vietnamese output
 
   Input Sequence | Default Mode | Strict Mode
   --- | --- | ---
