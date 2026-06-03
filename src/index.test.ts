@@ -223,10 +223,6 @@ describe("decode strict mode", () => {
     it("cach → cach (ch is a valid final consonant)", () => {
       expect(decode("cach", { strict: true })).toBe("cach");
     });
-
-    it("case → cá (s is a tone marker embedded in trimmed suffix)", () => {
-      expect(decode("case", { strict: true })).toBe("cá");
-    });
   });
 });
 

@@ -13,7 +13,7 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
   --- | --- | ---
   `za` | `za` | `a`
   `cad` | `cad` | `ca`
-  `case` | `case` | `cá`
+  `case` | `case` | `ca`
 
 - **Encode**: convert proper Vietnamese text back into Telex basic Latin
 

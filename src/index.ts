@@ -367,18 +367,9 @@ function decodeWord(word: string, strict: boolean): string {
   }
 
   // Trim invalid final consonants before tone application so isVowel works on
-  // undecorated characters. If the initial tone scan found nothing (e.g. a
-  // trailing vowel like the 'e' in "case" blocked it), scan the trimmed suffix
-  // for an embedded tone marker so that "case" → "cá" rather than "ca".
+  // undecorated characters
   if (strict) {
-    const preTrim = result;
     result = trimFinalConsonants(result);
-    if (tone === null && result.length < preTrim.length) {
-      for (const ch of preTrim.slice(result.length)) {
-        const lower = ch.toLowerCase();
-        if (lower in TONES) tone = lower;
-      }
-    }
   }
 
   // Apply tone
