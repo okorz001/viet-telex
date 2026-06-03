@@ -279,7 +279,11 @@ export function decode(text: string, options?: DecodeOptions): string {
 // After decoding, trim any trailing characters that do not form a valid
 // Vietnamese syllable-final consonant sequence. Operates on undecorated
 // (pre-tone) text so that isVowel matches correctly.
-function trimFinalConsonants(word: string): string {
+// Returns the trimmed word and any tone marker found while trimming.
+function trimFinalConsonants(word: string): {
+  word: string;
+  tone: string | null;
+} {
   const lower = word.toLowerCase();
   let clusterStart = -1;
   let clusterEnd = -1;
@@ -296,12 +300,15 @@ function trimFinalConsonants(word: string): string {
       i++;
     }
   }
-  if (clusterStart === -1) return word; // no vowel — nothing to trim
+  if (clusterStart === -1) return { word, tone: null }; // no vowel — nothing to trim
   let suffix = word.slice(clusterEnd);
+  let embeddedTone: string | null = null;
   while (!VALID_FINAL_CONSONANTS.has(suffix.toLowerCase())) {
+    const lastChar = suffix[suffix.length - 1].toLowerCase();
+    if (embeddedTone === null && lastChar in TONES) embeddedTone = lastChar;
     suffix = suffix.slice(0, -1);
   }
-  return word.slice(0, clusterEnd) + suffix;
+  return { word: word.slice(0, clusterEnd) + suffix, tone: embeddedTone };
 }
 
 function decodeWord(word: string, strict: boolean): string {
@@ -370,7 +377,10 @@ function decodeWord(word: string, strict: boolean): string {
   // Trim invalid final consonants before tone application so isVowel works on
   // undecorated characters
   if (strict) {
-    result = trimFinalConsonants(result);
+    const trimmed = trimFinalConsonants(result);
+    result = trimmed.word;
+    // Use any tone marker found in the trimmed suffix if none was detected at word end
+    if (tone === null) tone = trimmed.tone;
   }
 
   // Apply tone
