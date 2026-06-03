@@ -361,12 +361,19 @@ function decodeWord(
     raw = raw.slice(0, -1);
   }
 
-  // In lenient-tones non-strict mode, also scan for tone markers appearing
-  // mid-word between vowels. Only markers that have a vowel somewhere after
-  // them are treated as tones (markers with no following vowel are final
-  // consonants or already handled by the trailing scan above). The last such
-  // marker wins, but only when no trailing tone was already found.
-  if (!strict && lenientTones && tone === null && !escaped) {
+  // In lenient-tones mode, also scan for tone markers appearing mid-word
+  // between vowels. Only markers that have a vowel somewhere after them are
+  // treated as tones (markers with no following vowel are final consonants or
+  // already handled by the trailing scan above). The last such marker wins,
+  // but only when no trailing tone was already found.
+  //
+  // In strict mode, only non-Vietnamese tone letters (f, j, z) qualify — the
+  // Vietnamese-alphabet markers (s, r, x) are valid consonants in strict mode
+  // and must flow through trimFinalConsonants instead.
+  if (lenientTones && tone === null && !escaped) {
+    const eligibleTones = strict
+      ? new Set([...TONE_MARKERS].filter((c) => !VIETNAMESE_LETTERS.has(c)))
+      : TONE_MARKERS;
     let midTone: string | null = null;
     let newRaw = "";
     let hadVowel = false;
@@ -375,7 +382,7 @@ function decodeWord(
       if (SIMPLE_VOWELS.has(ch)) {
         hadVowel = true;
         newRaw += raw.charAt(k);
-      } else if (hadVowel && TONE_MARKERS.has(ch)) {
+      } else if (hadVowel && eligibleTones.has(ch)) {
         const hasVowelAfter = raw
           .slice(k + 1)
           .split("")

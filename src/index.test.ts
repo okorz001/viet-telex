@@ -242,8 +242,8 @@ describe("decode strict mode", () => {
       expect(decode("mfau")).toBe("mfau");
     });
 
-    it("mafu → mà when strict: true (f is inline tone, u discarded as non-Vietnamese)", () => {
-      expect(decode("mafu", { strict: true })).toBe("mà");
+    it("mafu → màu when strict: true (f is mid-word tone, u is vowel)", () => {
+      expect(decode("mafu", { strict: true })).toBe("màu");
     });
 
     it("mafu → mafu when strictTones: true (explicit opt-in)", () => {
