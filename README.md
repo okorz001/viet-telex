@@ -1,27 +1,58 @@
 # viet-telex
 
-A TypeScript module for decoding Telex input into Vietnamese text.
+A TypeScript module for Telex encoding of Vietnamese text.
 
-Telex encodes the diacritical marks necessary for Vietnamese in simple ASCII.
+Vietnamese requires diacritical marks to distinguish letters and indicate tone. Telex represents these marks using basic Latin letters, making Vietnamese text typeable on the common QWERTY keyboard.
+
+## Features
+
+- **Decode**: convert Telex basic Latin input into proper Vietnamese text
+- **Strict mode**: Optionally enforce valid Vietnamese output
+
+  Input Sequence | Default Mode | Strict Mode
+  --- | --- | ---
+  `za` | `za` | `a`
+  `cad` | `cad` | `ca`
+  `case` | `case` | `ca`
+
+- **Encode**: convert proper Vietnamese text back into Telex basic Latin
 
 ## API
 
-### `decode(text: string): string`
+### `decode(text: string, options?: DecodeOptions): string`
 
-Takes ASCII text using Telex digraphs and returns Vietnamese Unicode text.
+Converts basic Latin text using Telex encoding to proper Vietnamese text. `DecodeOptions` accepts:
+
+- `strict` (`boolean`, default `false`) — enables strict mode; see [Features](#features)
 
 ```ts
-decode("owng"); // → "ơng"
-decode("Ddowng"); // → "Đông"
+decode("hoongf"); // → "hồng"
 ```
 
 ### `encode(text: string): string`
 
-Takes Vietnamese Unicode text and returns ASCII text using Telex digraphs.
+Converts Vietnamese text into basic Latin text using Telex encoding.
 
 ```ts
-encode("ơng"); // → "owng"
-encode("Đông"); // → "Ddowng"
+encode("hồng"); // → "hoongf"
+```
+
+## Development
+
+**Prerequisites**: Node.js and npm.
+
+```sh
+# Install dependencies
+npm install
+
+# Run all checks (format, lint, type-check, tests)
+npm run verify
+
+# Build the project (type-check and compile to dist/)
+npm run build
+
+# Run tests only
+npm test
 ```
 
 ## Telex
