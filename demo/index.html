@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>viet-telex decode</title>
+    <title>viet-telex</title>
     <style>
       *,
       *::before,
@@ -130,12 +130,23 @@
         white-space: pre-wrap;
         overflow-y: auto;
       }
+
+      @media (max-width: 600px) {
+        #panes {
+          flex-direction: column;
+        }
+
+        textarea,
+        #output {
+          height: 12rem;
+        }
+      }
     </style>
   </head>
   <body>
     <main>
       <header>
-        <h1>viet-telex decode</h1>
+        <h1>viet-telex</h1>
         <p>
           Type Telex-encoded text on the left to see the decoded Vietnamese
           output on the right.
