@@ -23,7 +23,7 @@
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "test": "vitest run",
-    "demo": "node_modules/.bin/vite --port 8080",
+    "demo": "vite --port 8080",
     "verify": "npm run format:check && npm run lint && npm run build && npm run test"
   },
   "repository": {
@@ -48,6 +48,7 @@
     "typedoc": "^0.28.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.60.1",
+    "vite": "^8.0.16",
     "vitest": "^4.1.8"
   }
 }
