@@ -31,6 +31,10 @@ When adding a GitHub Actions action, use the same version already used by other 
 
 All Markdown section headers and table headers must use title case.
 
+## Demo Page
+
+All options in `DecodeOptions` must be exposed as controls in `demo/index.html`.
+
 ## Code Style
 
 All exported symbols must have a full TSDoc comment describing what the function does, its parameters (`@param`), and its return value (`@returns`). One-line summaries are not sufficient for exported API.
