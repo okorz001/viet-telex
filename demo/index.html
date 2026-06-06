@@ -3,59 +3,169 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>viet-telex decode</title>
+    <title>viet-telex</title>
     <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: sans-serif;
+        font-family: system-ui, -apple-system, sans-serif;
+        background: #f1f5f9;
+        color: #334155;
+        margin: 0;
+        padding: 2rem 1rem;
+        min-height: 100vh;
+      }
+
+      main {
         max-width: 900px;
-        margin: 2rem auto;
-        padding: 0 1rem;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 0.75rem;
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.08),
+          0 4px 16px rgba(0, 0, 0, 0.06);
+        padding: 2rem;
       }
+
+      header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+      }
+
       h1 {
-        text-align: center;
+        margin: 0 0 0.5rem;
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #0f172a;
       }
+
+      header p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #64748b;
+      }
+
       #controls {
-        margin-bottom: 0.75rem;
+        margin-bottom: 1.25rem;
         text-align: center;
       }
+
       #controls label {
-        margin-right: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 9999px;
+        border: 1.5px solid #e2e8f0;
+        font-size: 0.875rem;
+        color: #475569;
         cursor: pointer;
+        transition: border-color 0.15s;
       }
+
+      #controls label:hover {
+        border-color: #3b82f6;
+        color: #1e40af;
+      }
+
+      #controls input[type="checkbox"] {
+        accent-color: #3b82f6;
+        width: 0.9rem;
+        height: 0.9rem;
+      }
+
       #panes {
         display: flex;
         gap: 0.75rem;
         align-items: stretch;
-        height: 24rem;
       }
+
+      .pane {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
+        gap: 0.4rem;
+      }
+
+      .pane-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #64748b;
+      }
+
       textarea,
       #output {
-        box-sizing: border-box;
         flex: 1;
-        width: 0;
+        width: 100%;
+        height: 22rem;
         font-family: monospace;
-        font-size: 1.2rem;
+        font-size: 1rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        color: #0f172a;
       }
+
       textarea {
         resize: none;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
       }
+
+      textarea:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      }
+
       #output {
-        border: 1px solid #ccc;
-        padding: 0.4rem;
+        background: #f8fafc;
         white-space: pre-wrap;
         overflow-y: auto;
+      }
+
+      @media (max-width: 600px) {
+        #panes {
+          flex-direction: column;
+        }
+
+        textarea,
+        #output {
+          height: 12rem;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>viet-telex decode</h1>
-    <div id="controls">
-      <label><input type="checkbox" id="strict" /> strict</label>
-    </div>
-    <div id="panes">
-      <textarea id="input" placeholder="Type Telex here..." autofocus></textarea>
-      <div id="output"></div>
-    </div>
+    <main>
+      <header>
+        <h1>viet-telex</h1>
+        <p>
+          Type Telex-encoded text on the left to see the decoded Vietnamese
+          output on the right.
+        </p>
+      </header>
+      <div id="controls">
+        <label><input type="checkbox" id="strict" /> strict</label>
+      </div>
+      <div id="panes">
+        <div class="pane">
+          <div class="pane-label">Input</div>
+          <textarea id="input" placeholder="Type Telex here..." autofocus></textarea>
+        </div>
+        <div class="pane">
+          <div class="pane-label">Output</div>
+          <div id="output"></div>
+        </div>
+      </div>
+    </main>
     <script type="module">
       import { decode } from "../src/index.ts";
       const input = document.getElementById("input");
