@@ -136,13 +136,13 @@ describe("non-Vietnamese passthrough", () => {
   });
 });
 
-describe("decode strict mode", () => {
-  describe("non-strict is unchanged", () => {
-    it("decode(za) → za (z passes through without strict)", () => {
+describe("decode strict words mode", () => {
+  describe("non-strict words is unchanged", () => {
+    it("decode(za) → za (z passes through without strict words)", () => {
       expect(decode("za")).toBe("za");
     });
 
-    it("decode(cad) → cad (d not trimmed without strict)", () => {
+    it("decode(cad) → cad (d not trimmed without strict words)", () => {
       expect(decode("cad")).toBe("cad");
     });
   });
@@ -233,7 +233,7 @@ describe("decode strict mode", () => {
     });
   });
 
-  describe("strictTones", () => {
+  describe("strict tones", () => {
     it("mafu → màu (tone letter after vowel, more vowels follow)", () => {
       expect(decode("mafu")).toBe("màu");
     });
@@ -242,11 +242,11 @@ describe("decode strict mode", () => {
       expect(decode("mfau")).toBe("mfau");
     });
 
-    it("mafu → màu when strict: true (f is mid-word tone, u is vowel)", () => {
+    it("mafu → màu when strict words (f is mid-word tone, u is vowel)", () => {
       expect(decode("mafu", { strictWords: true })).toBe("màu");
     });
 
-    it("mafu → mafu when strictTones: true (explicit opt-in)", () => {
+    it("mafu → mafu when strict tones (explicit opt-in)", () => {
       expect(decode("mafu", { strictTones: true })).toBe("mafu");
     });
 
