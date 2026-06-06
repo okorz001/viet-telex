@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>viet-telex decode</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      h1 {
+        text-align: center;
+      }
+      #controls {
+        margin-bottom: 0.75rem;
+        text-align: center;
+      }
+      #controls label {
+        margin-right: 1rem;
+        cursor: pointer;
+      }
+      #panes {
+        display: flex;
+        gap: 0.75rem;
+        align-items: stretch;
+        height: 24rem;
+      }
+      textarea,
+      #output {
+        box-sizing: border-box;
+        flex: 1;
+        width: 0;
+        font-family: monospace;
+        font-size: 1.2rem;
+      }
+      textarea {
+        resize: none;
+      }
+      #output {
+        border: 1px solid #ccc;
+        padding: 0.4rem;
+        white-space: pre-wrap;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>viet-telex decode</h1>
+    <div id="controls">
+      <label><input type="checkbox" id="strict" /> strict</label>
+    </div>
+    <div id="panes">
+      <textarea id="input" placeholder="Type Telex here..." autofocus></textarea>
+      <div id="output"></div>
+    </div>
+    <script type="module">
+      import { decode } from "../src/index.ts";
+      const input = document.getElementById("input");
+      const output = document.getElementById("output");
+      const strict = document.getElementById("strict");
+
+      function update() {
+        output.textContent = decode(input.value, { strict: strict.checked });
+      }
+
+      input.addEventListener("input", update);
+      strict.addEventListener("change", update);
+    </script>
+  </body>
+</html>
