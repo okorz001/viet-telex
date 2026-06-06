@@ -173,7 +173,7 @@ function applyTone(word: string, combiningMark: string): string {
   ).normalize("NFC");
 }
 
-function isVietnamese(word: string, lenientTones = false): boolean {
+function isVietnamese(word: string, strictTones = false): boolean {
   const s = word.toLowerCase();
 
   // Digraph escape sequences are always decoded regardless of syllable structure.
@@ -202,7 +202,7 @@ function isVietnamese(word: string, lenientTones = false): boolean {
     } else if (SIMPLE_VOWELS.has(s.charAt(pos))) {
       pos += 1;
       hadVowel = true;
-    } else if (lenientTones && hadVowel && TONE_MARKERS.has(s.charAt(pos))) {
+    } else if (!strictTones && hadVowel && TONE_MARKERS.has(s.charAt(pos))) {
       pos += 1;
     } else {
       break;
@@ -223,7 +223,7 @@ function isVietnamese(word: string, lenientTones = false): boolean {
  */
 export interface DecodeOptions {
   /**
-   * When `true`, enables strict Vietnamese validation:
+   * When `true`, enables strict Vietnamese word validation:
    *
    * - ASCII characters not in the Vietnamese 29-letter alphabet (e.g. `f`, `j`,
    *   `w`, `z`) are silently discarded from the output.
@@ -242,7 +242,7 @@ export interface DecodeOptions {
    *
    * @defaultValue `false`
    */
-  strict?: boolean;
+  strictWords?: boolean;
   /**
    * When `true`, tone mark letters (`f`, `j`, `r`, `s`, `x`, `z`) are only
    * allowed at the end of a word. A tone letter appearing mid-word after a
@@ -282,14 +282,14 @@ export interface DecodeOptions {
  * @returns Vietnamese Unicode text in NFC form
  */
 export function decode(text: string, options?: DecodeOptions): string {
-  const strict = options?.strict ?? false;
-  const lenientTones = !(options?.strictTones ?? false);
+  const strictWords = options?.strictWords ?? false;
+  const strictTones = options?.strictTones ?? false;
   // Tokenize into alternating [word, separator, word, ...] segments
   const tokens = text.split(/([^a-zA-Z]+)/);
   return tokens
     .map((token) => {
       if (!token || /[^a-zA-Z]/.test(token)) return token; // separator
-      return decodeWord(token, strict, lenientTones);
+      return decodeWord(token, strictWords, strictTones);
     })
     .join("");
 }
@@ -331,10 +331,10 @@ function trimFinalConsonants(word: string): {
 
 function decodeWord(
   word: string,
-  strict: boolean,
-  lenientTones = false,
+  strictWords: boolean,
+  strictTones = false,
 ): string {
-  if (!strict && !isVietnamese(word, lenientTones)) return word;
+  if (!strictWords && !isVietnamese(word, strictTones)) return word;
   // Detect tone letter at end (may be escaped by doubling)
   let tone: string | null = null;
   let raw = word;
@@ -361,17 +361,17 @@ function decodeWord(
     raw = raw.slice(0, -1);
   }
 
-  // In lenient-tones mode, also scan for tone markers appearing mid-word
+  // Unless strict tones, also scan for tone markers appearing mid-word
   // between vowels. Only markers that have a vowel somewhere after them are
   // treated as tones (markers with no following vowel are final consonants or
   // already handled by the trailing scan above). The last such marker wins,
   // but only when no trailing tone was already found.
   //
-  // In strict mode, only non-Vietnamese tone letters (f, j, z) qualify — the
-  // Vietnamese-alphabet markers (s, r, x) are valid consonants in strict mode
+  // In strict words mode, only non-Vietnamese tone letters (f, j, z) qualify — the
+  // Vietnamese-alphabet markers (s, r, x) are valid consonants in strict words mode
   // and must flow through trimFinalConsonants instead.
-  if (lenientTones && tone === null && !escaped) {
-    const eligibleTones = strict
+  if (!strictTones && tone === null && !escaped) {
+    const eligibleTones = strictWords
       ? new Set([...TONE_MARKERS].filter((c) => !VIETNAMESE_LETTERS.has(c)))
       : TONE_MARKERS;
     let midTone: string | null = null;
@@ -404,7 +404,7 @@ function decodeWord(
 
   // Decode digraphs in the remaining token
   let result = "";
-  // In strict mode, track the first inline tone marker (f, j, z) that is not
+  // In strict words mode, track the first inline tone marker (f, j, z) that is not
   // in the Vietnamese alphabet. When found, record the result length at that
   // point so we can truncate everything after it (it marks the end of the
   // syllable body) and use it as a fallback tone if no end-of-word tone exists.
@@ -425,7 +425,7 @@ function decodeWord(
         // escape candidate: only honor if not strict, or if the pair is a
         // recognized Vietnamese vowel cluster (only "oo" qualifies among the
         // seven Telex digraphs)
-        if (!strict || NUCLEI.has(digraph)) {
+        if (!strictWords || NUCLEI.has(digraph)) {
           result += raw.charAt(i) + raw.charAt(i + 1);
           i += 3;
         } else {
@@ -440,9 +440,9 @@ function decodeWord(
       }
     } else {
       const ch = raw.charAt(i).toLowerCase();
-      if (!strict || VIETNAMESE_LETTERS.has(ch)) {
+      if (!strictWords || VIETNAMESE_LETTERS.has(ch)) {
         result += raw.charAt(i);
-      } else if (strict && inlineToneTruncPos === -1 && TONES.has(ch)) {
+      } else if (strictWords && inlineToneTruncPos === -1 && TONES.has(ch)) {
         // Non-Vietnamese tone marker (f, j, z) after a vowel signals the end
         // of the syllable body; record the truncation point and capture as a
         // potential tone. Markers before any vowel are simply discarded.
@@ -455,15 +455,15 @@ function decodeWord(
     }
   }
 
-  // In strict mode, apply any inline tone truncation found during decoding
-  if (strict && inlineToneTruncPos !== -1) {
+  // In strict words mode, apply any inline tone truncation found during decoding
+  if (strictWords && inlineToneTruncPos !== -1) {
     result = result.slice(0, inlineToneTruncPos);
     if (tone === null) tone = inlineToneChar;
   }
 
   // Trim invalid final consonants before tone application so isVowel works on
   // undecorated characters
-  if (strict) {
+  if (strictWords) {
     const trimmed = trimFinalConsonants(result);
     result = trimmed.word;
     // Use any tone marker found in the trimmed suffix if none was detected at word end
