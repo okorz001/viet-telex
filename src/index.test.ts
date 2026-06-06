@@ -232,6 +232,28 @@ describe("decode strict mode", () => {
       expect(decode("cach", { strict: true })).toBe("cach");
     });
   });
+
+  describe("strictTones", () => {
+    it("mafu → màu (tone letter after vowel, more vowels follow)", () => {
+      expect(decode("mafu")).toBe("màu");
+    });
+
+    it("mfau → mfau (tone letter before any vowel, not Vietnamese)", () => {
+      expect(decode("mfau")).toBe("mfau");
+    });
+
+    it("mafu → màu when strict: true (f is mid-word tone, u is vowel)", () => {
+      expect(decode("mafu", { strict: true })).toBe("màu");
+    });
+
+    it("mafu → mafu when strictTones: true (explicit opt-in)", () => {
+      expect(decode("mafu", { strictTones: true })).toBe("mafu");
+    });
+
+    it("mafsu → máu (last tone wins: s after f)", () => {
+      expect(decode("mafsu")).toBe("máu");
+    });
+  });
 });
 
 describe("encode", () => {
