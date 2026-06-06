@@ -2,7 +2,7 @@
   "entryPoints": ["src/index.ts"],
   "out": "site",
   "name": "viet-telex",
-  "readme": "README.md",
+  "readme": "none",
   "navigationLinks": {
     "GitHub": "https://github.com/okorz001/viet-telex"
   }
