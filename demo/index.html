@@ -153,7 +153,7 @@
         </p>
       </header>
       <div id="controls">
-        <label><input type="checkbox" id="strict" /> strict</label>
+        <label><input type="checkbox" id="strictWords" /> strict words</label>
         <label><input type="checkbox" id="strictTones" /> strict tones</label>
       </div>
       <div id="panes">
@@ -171,18 +171,18 @@
       import { decode } from "../src/index.ts";
       const input = document.getElementById("input");
       const output = document.getElementById("output");
-      const strict = document.getElementById("strict");
+      const strictWords = document.getElementById("strictWords");
       const strictTones = document.getElementById("strictTones");
 
       function update() {
         output.textContent = decode(input.value, {
-          strict: strict.checked,
+          strictWords: strictWords.checked,
           strictTones: strictTones.checked,
         });
       }
 
       input.addEventListener("input", update);
-      strict.addEventListener("change", update);
+      strictWords.addEventListener("change", update);
       strictTones.addEventListener("change", update);
     </script>
   </body>

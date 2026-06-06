@@ -23,7 +23,7 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 
 Converts basic Latin text using Telex encoding to proper Vietnamese text. `DecodeOptions` accepts:
 
-- `strict` (`boolean`, default `false`) — enables strict mode; see [Features](#features)
+- `strictWords` (`boolean`, default `false`) — enables strict word validation; see [Features](#features)
 
 ```ts
 decode("hoongf"); // → "hồng"

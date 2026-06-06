@@ -242,7 +242,7 @@ export interface DecodeOptions {
    *
    * @defaultValue `false`
    */
-  strict?: boolean;
+  strictWords?: boolean;
   /**
    * When `true`, tone mark letters (`f`, `j`, `r`, `s`, `x`, `z`) are only
    * allowed at the end of a word. A tone letter appearing mid-word after a
@@ -282,7 +282,7 @@ export interface DecodeOptions {
  * @returns Vietnamese Unicode text in NFC form
  */
 export function decode(text: string, options?: DecodeOptions): string {
-  const strict = options?.strict ?? false;
+  const strict = options?.strictWords ?? false;
   const lenientTones = !(options?.strictTones ?? false);
   // Tokenize into alternating [word, separator, word, ...] segments
   const tokens = text.split(/([^a-zA-Z]+)/);

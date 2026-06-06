@@ -149,87 +149,87 @@ describe("decode strict mode", () => {
 
   describe("character discarding", () => {
     it("za → a (z is not a Vietnamese letter)", () => {
-      expect(decode("za", { strict: true })).toBe("a");
+      expect(decode("za", { strictWords: true })).toBe("a");
     });
 
     it("fam → am (f is not a Vietnamese letter)", () => {
-      expect(decode("fam", { strict: true })).toBe("am");
+      expect(decode("fam", { strictWords: true })).toBe("am");
     });
 
     it("tone letters at end are not discarded: maj → mạ", () => {
-      expect(decode("maj", { strict: true })).toBe("mạ");
+      expect(decode("maj", { strictWords: true })).toBe("mạ");
     });
 
     it("tone letters at end are not discarded: maf → mà", () => {
-      expect(decode("maf", { strict: true })).toBe("mà");
+      expect(decode("maf", { strictWords: true })).toBe("mà");
     });
   });
 
   describe("escape sequences", () => {
     it("ooo → oo (oo is a valid Vietnamese vowel cluster)", () => {
-      expect(decode("ooo", { strict: true })).toBe("oo");
+      expect(decode("ooo", { strictWords: true })).toBe("oo");
     });
 
     it("xooong → xoong (oo escape honored mid-word)", () => {
-      expect(decode("xooong", { strict: true })).toBe("xoong");
+      expect(decode("xooong", { strictWords: true })).toBe("xoong");
     });
 
     it("oww → ơ (ow not a Vietnamese cluster, w discarded)", () => {
-      expect(decode("oww", { strict: true })).toBe("ơ");
+      expect(decode("oww", { strictWords: true })).toBe("ơ");
     });
 
     it("aww → ă (aw not a Vietnamese cluster, w discarded)", () => {
-      expect(decode("aww", { strict: true })).toBe("ă");
+      expect(decode("aww", { strictWords: true })).toBe("ă");
     });
 
     it("uww → ư (uw not a Vietnamese cluster, w discarded)", () => {
-      expect(decode("uww", { strict: true })).toBe("ư");
+      expect(decode("uww", { strictWords: true })).toBe("ư");
     });
 
     it("owwr → ở (ow decoded, w discarded, tone r applied)", () => {
-      expect(decode("owwr", { strict: true })).toBe("ở");
+      expect(decode("owwr", { strictWords: true })).toBe("ở");
     });
 
     it("aaa → â (aa not a Vietnamese cluster, escape and trigger discarded)", () => {
-      expect(decode("aaa", { strict: true })).toBe("â");
+      expect(decode("aaa", { strictWords: true })).toBe("â");
     });
 
     it("ddd → đ (dd not a Vietnamese cluster, escape and trigger discarded)", () => {
-      expect(decode("ddd", { strict: true })).toBe("đ");
+      expect(decode("ddd", { strictWords: true })).toBe("đ");
     });
 
     it("eee → ê (ee not a Vietnamese cluster, escape and trigger discarded)", () => {
-      expect(decode("eee", { strict: true })).toBe("ê");
+      expect(decode("eee", { strictWords: true })).toBe("ê");
     });
   });
 
   describe("final consonant trimming", () => {
     it("cad → ca (d is not a valid final consonant)", () => {
-      expect(decode("cad", { strict: true })).toBe("ca");
+      expect(decode("cad", { strictWords: true })).toBe("ca");
     });
 
     it("cads → cá (d trimmed, then tone s applied)", () => {
-      expect(decode("cads", { strict: true })).toBe("cá");
+      expect(decode("cads", { strictWords: true })).toBe("cá");
     });
 
     it("case → cá (tone s in suffix recovered while trimming e)", () => {
-      expect(decode("case", { strict: true })).toBe("cá");
+      expect(decode("case", { strictWords: true })).toBe("cá");
     });
 
     it("cafes → cá (end tone s wins over embedded tone f, e trimmed)", () => {
-      expect(decode("cafes", { strict: true })).toBe("cá");
+      expect(decode("cafes", { strictWords: true })).toBe("cá");
     });
 
     it("cang → cang (ng is a valid final consonant)", () => {
-      expect(decode("cang", { strict: true })).toBe("cang");
+      expect(decode("cang", { strictWords: true })).toBe("cang");
     });
 
     it("canh → canh (nh is a valid final consonant)", () => {
-      expect(decode("canh", { strict: true })).toBe("canh");
+      expect(decode("canh", { strictWords: true })).toBe("canh");
     });
 
     it("cach → cach (ch is a valid final consonant)", () => {
-      expect(decode("cach", { strict: true })).toBe("cach");
+      expect(decode("cach", { strictWords: true })).toBe("cach");
     });
   });
 
@@ -243,7 +243,7 @@ describe("decode strict mode", () => {
     });
 
     it("mafu → màu when strict: true (f is mid-word tone, u is vowel)", () => {
-      expect(decode("mafu", { strict: true })).toBe("màu");
+      expect(decode("mafu", { strictWords: true })).toBe("màu");
     });
 
     it("mafu → mafu when strictTones: true (explicit opt-in)", () => {
