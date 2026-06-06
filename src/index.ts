@@ -361,14 +361,14 @@ function decodeWord(
     raw = raw.slice(0, -1);
   }
 
-  // Unless strictTones, also scan for tone markers appearing mid-word
+  // Unless strict tones, also scan for tone markers appearing mid-word
   // between vowels. Only markers that have a vowel somewhere after them are
   // treated as tones (markers with no following vowel are final consonants or
   // already handled by the trailing scan above). The last such marker wins,
   // but only when no trailing tone was already found.
   //
-  // In strictWords mode, only non-Vietnamese tone letters (f, j, z) qualify — the
-  // Vietnamese-alphabet markers (s, r, x) are valid consonants in strictWords mode
+  // In strict words mode, only non-Vietnamese tone letters (f, j, z) qualify — the
+  // Vietnamese-alphabet markers (s, r, x) are valid consonants in strict words mode
   // and must flow through trimFinalConsonants instead.
   if (!strictTones && tone === null && !escaped) {
     const eligibleTones = strictWords
@@ -455,7 +455,7 @@ function decodeWord(
     }
   }
 
-  // In strictWords mode, apply any inline tone truncation found during decoding
+  // In strict words mode, apply any inline tone truncation found during decoding
   if (strictWords && inlineToneTruncPos !== -1) {
     result = result.slice(0, inlineToneTruncPos);
     if (tone === null) tone = inlineToneChar;
