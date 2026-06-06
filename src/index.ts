@@ -223,7 +223,7 @@ function isVietnamese(word: string, strictTones = false): boolean {
  */
 export interface DecodeOptions {
   /**
-   * When `true`, enables strict Vietnamese validation:
+   * When `true`, enables strict Vietnamese word validation:
    *
    * - ASCII characters not in the Vietnamese 29-letter alphabet (e.g. `f`, `j`,
    *   `w`, `z`) are silently discarded from the output.
@@ -361,7 +361,7 @@ function decodeWord(
     raw = raw.slice(0, -1);
   }
 
-  // In non-strictTones mode, also scan for tone markers appearing mid-word
+  // Unless strictTones, also scan for tone markers appearing mid-word
   // between vowels. Only markers that have a vowel somewhere after them are
   // treated as tones (markers with no following vowel are final consonants or
   // already handled by the trailing scan above). The last such marker wins,
@@ -404,7 +404,7 @@ function decodeWord(
 
   // Decode digraphs in the remaining token
   let result = "";
-  // In strict mode, track the first inline tone marker (f, j, z) that is not
+  // In strict words mode, track the first inline tone marker (f, j, z) that is not
   // in the Vietnamese alphabet. When found, record the result length at that
   // point so we can truncate everything after it (it marks the end of the
   // syllable body) and use it as a fallback tone if no end-of-word tone exists.
