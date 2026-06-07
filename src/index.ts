@@ -104,7 +104,6 @@ const NUCLEI: Map<string, number> = new Map([
   ["uy", 1],
   ["uya", 1],
   ["ươ", 1],
-  ["yê", 1],
   ["yêu", 1],
   // nucleus at index 2
   ["uyê", 2],
@@ -209,6 +208,7 @@ function isVietnamese(word: string, strictTones = false): boolean {
   // Greedy vowel cluster: try VOWEL_DIGRAPHS first at each position, then
   // simple vowels. This supports diphthongs and triphthongs (e.g. Nguyeenx).
   let hadVowel = false;
+  let vCluster = "";
 
   if (!SIMPLE_VOWELS.has(s.charAt(0))) {
     const match = INITIAL_CONSONANTS.find((c) => s.startsWith(c));
@@ -217,9 +217,11 @@ function isVietnamese(word: string, strictTones = false): boolean {
     if (pos === s.length) return true; // consonant-only word (dd → đ)
     // "gi" and "qu" end in a vowel letter; that letter counts toward hadVowel
     // so a bare tone marker (e.g. "gif") is recognised as valid Vietnamese.
+    // For "qu", also pre-seed vCluster with 'u' so that a following 'y'+'ê'
+    // accumulates as "uyê" (in NUCLEI) rather than the invalid "yê".
     if (match === "gi" || match === "qu") hadVowel = true;
+    if (match === "qu") vCluster = "u";
   }
-  let vCluster = "";
   while (pos < s.length) {
     const vDg = VOWEL_DIGRAPHS.find((d) => s.startsWith(d, pos));
     if (vDg) {
@@ -551,12 +553,18 @@ function decodeWord(
     if (tone === null) tone = trimmed.tone;
   }
 
-  // Apply tone. For "gi"/"qu" initial consonants, pass consonantLen=2 so that
-  // applyTone searches for the vowel cluster starting after the terminal vowel
-  // letter of the consonant (e.g. "gia" → cluster is "a", not "ia").
+  // Apply tone. For "gi"/"qu" initial consonants, pass consonantLen so that
+  // applyTone skips the terminal vowel of the consonant when searching for the
+  // vowel cluster (e.g. "gia" → cluster "a", not "ia").
+  // Exception: "qu" + "y" uses consonantLen=1 so the 'u' is included in the
+  // cluster search, allowing NUCLEI to match "uyê" rather than the invalid "yê".
   let consonantLen = 0;
   const rl = result.toLowerCase();
-  if (rl.startsWith("gi") || rl.startsWith("qu")) consonantLen = 2;
+  if (rl.startsWith("gi")) {
+    consonantLen = 2;
+  } else if (rl.startsWith("qu")) {
+    consonantLen = rl.charAt(2) === "y" ? 1 : 2;
+  }
   if (tone !== null) {
     result = applyTone(result, TONES.get(tone) ?? "", consonantLen);
   }
