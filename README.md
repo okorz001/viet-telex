@@ -7,35 +7,11 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 ## Features
 
 - **Decode**: convert Telex basic Latin input into proper Vietnamese text
-- **Strict mode**: Optionally enforce valid Vietnamese output
-
-  Input Sequence | Default Mode | Strict Mode
-  --- | --- | ---
-  `za` | `za` | `a`
-  `cad` | `cad` | `ca`
-  `case` | `case` | `ca`
-
 - **Encode**: convert proper Vietnamese text back into Telex basic Latin
 
 ## API
 
-### `decode(text: string, options?: DecodeOptions): string`
-
-Converts basic Latin text using Telex encoding to proper Vietnamese text. `DecodeOptions` accepts:
-
-- `strictWords` (`boolean`, default `false`) — enables strict word validation; see [Features](#features)
-
-```ts
-decode("hoongf"); // → "hồng"
-```
-
-### `encode(text: string): string`
-
-Converts Vietnamese text into basic Latin text using Telex encoding.
-
-```ts
-encode("hồng"); // → "hoongf"
-```
+[Typedoc](https://okorz001.github.io/viet-telex/) is published after every build.
 
 ## Development
 
