@@ -209,6 +209,7 @@ function isVietnamese(word: string, strictTones = false): boolean {
   // simple vowels. This supports diphthongs and triphthongs (e.g. Nguyeenx).
   let hadVowel = false;
   let vCluster = "";
+  let initialConsonant = "";
 
   if (!SIMPLE_VOWELS.has(s.charAt(0))) {
     const match = INITIAL_CONSONANTS.find((c) => s.startsWith(c));
@@ -217,10 +218,10 @@ function isVietnamese(word: string, strictTones = false): boolean {
     if (pos === s.length) return true; // consonant-only word (dd → đ)
     // "gi" and "qu" end in a vowel letter; that letter counts toward hadVowel
     // so a bare tone marker (e.g. "gif") is recognised as valid Vietnamese.
-    // For "qu", also pre-seed vCluster with 'u' so that a following 'y'+'ê'
-    // accumulates as "uyê" (in NUCLEI) rather than the invalid "yê".
-    if (match === "gi" || match === "qu") hadVowel = true;
-    if (match === "qu") vCluster = "u";
+    if (match === "gi" || match === "qu") {
+      hadVowel = true;
+      initialConsonant = match;
+    }
   }
   while (pos < s.length) {
     const vDg = VOWEL_DIGRAPHS.find((d) => s.startsWith(d, pos));
@@ -239,7 +240,14 @@ function isVietnamese(word: string, strictTones = false): boolean {
     }
   }
   if (!hadVowel) return false;
-  if (vCluster.length > 1 && !NUCLEI.has(vCluster)) return false;
+  if (vCluster.length > 1 && !NUCLEI.has(vCluster)) {
+    // For "gi"/"qu" initial consonants, the terminal vowel letter ('i'/'u')
+    // may be part of the vowel cluster. First assume it is not (a regular
+    // consonant); only if that check fails, try prepending it.
+    const prefix =
+      initialConsonant === "qu" ? "u" : initialConsonant === "gi" ? "i" : "";
+    if (!prefix || !NUCLEI.has(prefix + vCluster)) return false;
+  }
 
   // Strip tone markers from the remaining suffix, then verify it is a valid
   // final consonant (or empty for an open syllable). This allows tone markers
@@ -553,18 +561,15 @@ function decodeWord(
     if (tone === null) tone = trimmed.tone;
   }
 
-  // Apply tone. For "gi"/"qu" initial consonants, pass consonantLen so that
-  // applyTone skips the terminal vowel of the consonant when searching for the
-  // vowel cluster (e.g. "gia" → cluster "a", not "ia").
-  // Exception: "qu" + "y" uses consonantLen=1 so the 'u' is included in the
-  // cluster search, allowing NUCLEI to match "uyê" rather than the invalid "yê".
+  // Apply tone. For "gi"/"qu" initial consonants, pass consonantLen=2 so that
+  // applyTone first looks for a vowel cluster after the terminal consonant vowel
+  // (e.g. "gia" → cluster "a", not "ia"). When no preferred cluster exists there,
+  // applyTone falls back to the full vowel run including the terminal vowel letter
+  // (e.g. "gi" alone → falls back to "i"; "quyê" → effStart clips run to "yê",
+  // whose fallback nucleusIndex correctly lands on "ê").
   let consonantLen = 0;
   const rl = result.toLowerCase();
-  if (rl.startsWith("gi")) {
-    consonantLen = 2;
-  } else if (rl.startsWith("qu")) {
-    consonantLen = rl.charAt(2) === "y" ? 1 : 2;
-  }
+  if (rl.startsWith("gi") || rl.startsWith("qu")) consonantLen = 2;
   if (tone !== null) {
     result = applyTone(result, TONES.get(tone) ?? "", consonantLen);
   }

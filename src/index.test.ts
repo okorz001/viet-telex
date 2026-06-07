@@ -246,6 +246,7 @@ describe("decode", () => {
       ["gias", "giá"],
       ["gios", "gió"],
       ["quas", "quá"],
+      ["ques", "qué"],
       ["quyeenr", "quyển"],
     ])("%s → %s", ([input, output]) => {
       expect(decode(input)).toBe(output);
@@ -349,6 +350,7 @@ describe("encode", () => {
       ["gì", "gif"],
       ["giá", "gias"],
       ["quá", "quas"],
+      ["qué", "ques"],
       ["quyển", "quyeenr"],
     ])("%s → %s", ([input, output]) => {
       expect(encode(input)).toBe(output);
