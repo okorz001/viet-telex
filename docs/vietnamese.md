@@ -48,7 +48,7 @@ Vietnamese also has many diphthongs and triphthongs. They can be divided into th
 
 These are never used with a final consonant:
 
-> ai ao au ay âu ây eo êu iêu iu ia oai oao oeo oi ôi ơi ua ui uya ưa ưi ưu yêu
+> ai ao au ay âu ây eo êu ia iêu iu oai oao oeo oi ôi ơi ua ui uya ưa ưi ưu yêu
 
 These may be used with a final consonant:
 
@@ -56,7 +56,9 @@ These may be used with a final consonant:
 
 These must be used with a final consonant:
 
-> iê oă oo uâ uô ươ uyê
+> iê oă oo uâ uô uyê ươ
+
+Any other combinations of vowels is invalid.
 
 ## Tones
 
