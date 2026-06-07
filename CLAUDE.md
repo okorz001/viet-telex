@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A TypeScript module for encoding/decoding Vietnamese text in Telex format. The Telex encoding rules are documented in [docs/telex.md](docs/telex.md) — read it before working on the core logic.
+A TypeScript module for encoding/decoding Vietnamese text in Telex format.
 
 ## Commands
 
@@ -20,10 +20,6 @@ npm run verify        # run all of the above checks in sequence
 Always verify `npm run verify` passes before proposing a code change.
 
 ## GitHub
-
-After creating a pull request, always subscribe to it with `subscribe_pr_activity` without asking first.
-
-When checking CI results, always fetch annotations even on passing runs — a green conclusion can still carry warnings that need attention.
 
 When adding a GitHub Actions action, use the same version already used by other jobs in the workflow files if it exists. Only when introducing an action not yet used anywhere should you look up and use its latest stable release.
 
