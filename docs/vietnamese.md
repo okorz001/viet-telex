@@ -83,11 +83,11 @@ There are multiple conventions for where to place tone marks on compound vowels.
 
 Tone marks are placed on the first letter of the following:
 
-> ai ao au ay âu ây eo êu ia iu oi ôi ơi ui ưi ưu
+> ai ao au ay âu ây eo êu ia iu oi ôi ơi ua ui ưa ưi ưu
 
 Tone marks are placed on the second letter of the following:
 
-> iê iêu oa oai oao oă oe oeo oo ua uâ uê uô uy uya ưa ươ yêu
+> iê iêu oa oai oao oă oe oeo oo uâ uê uô uy uya ươ yêu
 
 Tone marks are placed on the third letter of the following:
 
