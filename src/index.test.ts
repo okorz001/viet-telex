@@ -132,8 +132,7 @@ describe("decode", () => {
       ["aays", "ấy"],
       ["eos", "éo"],
       ["eeus", "ếu"],
-      // TODO: broken
-      //["ias", "ía"],
+      ["ias", "ía"],
       ["iees", "iế"],
       ["ieeus", "iếu"],
       ["ius", "íu"],
@@ -152,8 +151,7 @@ describe("decode", () => {
       ["uees", "uế"],
       ["uis", "úi"],
       ["uoos", "uố"],
-      // TODO: broken
-      //["uys", "uý"],
+      ["uys", "uý"],
       ["uyas", "uýa"],
       ["uyees", "uyế"],
       // TODO: broken
