@@ -56,7 +56,6 @@ const INITIAL_CONSONANTS = [
 ];
 const VOWEL_DIGRAPHS = ["aw", "aa", "ee", "oo", "ow", "uw"];
 const SIMPLE_VOWELS = new Set(["a", "e", "i", "o", "u", "y"]);
-const FINAL_CONSONANTS = ["ch", "ng", "nh", "c", "m", "n", "p", "t"];
 const TONE_MARKERS = new Set(["s", "f", "r", "x", "j", "z"]);
 // INITIAL_CONSONANTS with the Telex digraph "dd" replaced by its decoded form "đ",
 // for matching against already-decoded output in strict-words mode.
@@ -219,12 +218,16 @@ function isVietnamese(word: string, strictTones = false): boolean {
   if (!hadVowel) return false;
   if (vCluster.length > 1 && !NUCLEI.has(vCluster)) return false;
 
-  const fc = FINAL_CONSONANTS.find((c) => s.startsWith(c, pos));
-  if (fc) pos += fc.length;
-
-  while (pos < s.length && TONE_MARKERS.has(s.charAt(pos))) pos++;
-
-  return pos === s.length;
+  // Strip tone markers from the remaining suffix, then verify it is a valid
+  // final consonant (or empty for an open syllable). This allows tone markers
+  // to appear anywhere within the final-consonant region (e.g. "thicsh" where
+  // 's' sits between 'c' and 'h' of the "ch" digraph).
+  let suffix = "";
+  for (let k = pos; k < s.length; k++) {
+    const c = s.charAt(k);
+    if (!TONE_MARKERS.has(c)) suffix += c;
+  }
+  return VALID_FINAL_CONSONANTS.has(suffix);
 }
 
 /**
@@ -434,30 +437,26 @@ function decodeWord(
       ? new Set([...TONE_MARKERS].filter((c) => !VIETNAMESE_LETTERS.has(c)))
       : TONE_MARKERS;
     let midTone: string | null = null;
-    let newRaw = "";
+    let midToneIdx = -1;
     let hadVowel = false;
     for (let k = 0; k < raw.length; k++) {
       const ch = raw.charAt(k).toLowerCase();
       if (SIMPLE_VOWELS.has(ch)) {
         hadVowel = true;
-        newRaw += raw.charAt(k);
       } else if (hadVowel && eligibleTones.has(ch)) {
-        const hasVowelAfter = raw
-          .slice(k + 1)
-          .split("")
-          .some((c) => SIMPLE_VOWELS.has(c.toLowerCase()));
-        if (hasVowelAfter) {
-          midTone = ch; // last mid-word tone wins
-        } else {
-          newRaw += raw.charAt(k); // trailing marker — keep as-is
+        // Accept as tone if removing it leaves a valid Vietnamese syllable.
+        // This handles tone before a final consonant ("tism"→"tím") and tone
+        // embedded within a final consonant digraph ("thicsh"→"thích").
+        const candidate = raw.slice(0, k) + raw.slice(k + 1);
+        if (isVietnamese(candidate)) {
+          midTone = ch; // last valid mid-word tone wins
+          midToneIdx = k;
         }
-      } else {
-        newRaw += raw.charAt(k);
       }
     }
     if (midTone !== null) {
       tone = midTone;
-      raw = newRaw;
+      raw = raw.slice(0, midToneIdx) + raw.slice(midToneIdx + 1);
     }
   }
 
