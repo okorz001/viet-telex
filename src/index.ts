@@ -56,6 +56,7 @@ const INITIAL_CONSONANTS = [
 ];
 const VOWEL_DIGRAPHS = ["aw", "aa", "ee", "oo", "ow", "uw"];
 const SIMPLE_VOWELS = new Set(["a", "e", "i", "o", "u", "y"]);
+const FINAL_CONSONANTS = ["ch", "ng", "nh", "c", "m", "n", "p", "t"];
 const TONE_MARKERS = new Set(["s", "f", "r", "x", "j", "z"]);
 // INITIAL_CONSONANTS with the Telex digraph "dd" replaced by its decoded form "đ",
 // for matching against already-decoded output in strict-words mode.
@@ -112,19 +113,6 @@ const VOWELS = new Set("aăâeêioôơuưy");
 
 // ASCII letters present in the Vietnamese 29-letter alphabet (excludes f, j, w, z)
 const VIETNAMESE_LETTERS = new Set("abcdeghiklmnopqrstuvxy");
-
-// Valid Vietnamese syllable-final consonant sequences; empty string = open syllable
-const VALID_FINAL_CONSONANTS = new Set([
-  "",
-  "c",
-  "ch",
-  "m",
-  "n",
-  "ng",
-  "nh",
-  "p",
-  "t",
-]);
 
 function isVowel(ch: string): boolean {
   return VOWELS.has(ch.toLowerCase());
@@ -227,7 +215,7 @@ function isVietnamese(word: string, strictTones = false): boolean {
     const c = s.charAt(k);
     if (!TONE_MARKERS.has(c)) suffix += c;
   }
-  return VALID_FINAL_CONSONANTS.has(suffix);
+  return suffix === "" || FINAL_CONSONANTS.includes(suffix);
 }
 
 /**
@@ -383,7 +371,7 @@ function trimFinalConsonants(word: string): {
   if (clusterStart === -1) return { word, tone: null }; // no vowel — nothing to trim
   let suffix = word.slice(clusterEnd);
   let embeddedTone: string | null = null;
-  while (!VALID_FINAL_CONSONANTS.has(suffix.toLowerCase())) {
+  while (suffix !== "" && !FINAL_CONSONANTS.includes(suffix.toLowerCase())) {
     const lastChar = suffix.charAt(suffix.length - 1).toLowerCase();
     if (embeddedTone === null && TONES.has(lastChar)) embeddedTone = lastChar;
     suffix = suffix.slice(0, -1);
