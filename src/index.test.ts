@@ -309,8 +309,7 @@ describe("encode", () => {
   describe("digraph escape case handling", () => {
     it.for([
       ["Ow", "Oww"],
-      // TODO: broken
-      //["oW", "oWw"],
+      ["oW", "oWw"],
     ])("%s → %s", ([input, output]) => {
       expect(encode(input)).toBe(output);
     });

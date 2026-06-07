@@ -589,13 +589,14 @@ function encodeWord(word: string): string {
 
     // Plain ASCII — escape if this char would form an unescaped digraph with the preceding one
     const potDigraph = contextChar.toLowerCase() + lower;
-    if (contextChar && DIGRAPHS.has(potDigraph)) {
-      result += ch; // duplicate second char to trigger decode's escape mechanism
+    const needsEscape = contextChar !== "" && DIGRAPHS.has(potDigraph);
+    if (needsEscape) {
       contextChar = "";
     } else {
       contextChar = ch;
     }
     result += ch;
+    if (needsEscape) result += lower; // lowercase escape follows the actual char
     i++;
   }
 
