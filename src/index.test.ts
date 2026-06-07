@@ -219,8 +219,6 @@ describe("decode", () => {
         });
       });
 
-      // TODO: broken
-      /*
       describe("invalid vowel", () => {
         it.for([
           ["teas", "té"],
@@ -230,7 +228,6 @@ describe("decode", () => {
           expect(decode(input, { strictWords: true })).toBe(output);
         });
       });
-      */
 
       describe("invalid final consonant", () => {
         it.for([
