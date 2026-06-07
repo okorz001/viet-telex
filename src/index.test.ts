@@ -244,10 +244,8 @@ describe("decode", () => {
     describe("lenient by default", () => {
       it.for([
         ["mafu", "màu"],
-        // TODO: broken
-        //["tism", "tím"],
-        // TODO: broken
-        //["thicsh", "thích"],
+        ["tism", "tím"],
+        ["thicsh", "thích"],
       ])("%s → %s", ([input, output]) => {
         expect(decode(input)).toBe(output);
       });

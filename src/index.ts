@@ -114,19 +114,6 @@ const VOWELS = new Set("aăâeêioôơuưy");
 // ASCII letters present in the Vietnamese 29-letter alphabet (excludes f, j, w, z)
 const VIETNAMESE_LETTERS = new Set("abcdeghiklmnopqrstuvxy");
 
-// Valid Vietnamese syllable-final consonant sequences; empty string = open syllable
-const VALID_FINAL_CONSONANTS = new Set([
-  "",
-  "c",
-  "ch",
-  "m",
-  "n",
-  "ng",
-  "nh",
-  "p",
-  "t",
-]);
-
 function isVowel(ch: string): boolean {
   return VOWELS.has(ch.toLowerCase());
 }
@@ -219,12 +206,16 @@ function isVietnamese(word: string, strictTones = false): boolean {
   if (!hadVowel) return false;
   if (vCluster.length > 1 && !NUCLEI.has(vCluster)) return false;
 
-  const fc = FINAL_CONSONANTS.find((c) => s.startsWith(c, pos));
-  if (fc) pos += fc.length;
-
-  while (pos < s.length && TONE_MARKERS.has(s.charAt(pos))) pos++;
-
-  return pos === s.length;
+  // Strip tone markers from the remaining suffix, then verify it is a valid
+  // final consonant (or empty for an open syllable). This allows tone markers
+  // to appear anywhere within the final-consonant region (e.g. "thicsh" where
+  // 's' sits between 'c' and 'h' of the "ch" digraph).
+  let suffix = "";
+  for (let k = pos; k < s.length; k++) {
+    const c = s.charAt(k);
+    if (!TONE_MARKERS.has(c)) suffix += c;
+  }
+  return suffix === "" || FINAL_CONSONANTS.includes(suffix);
 }
 
 /**
@@ -380,7 +371,7 @@ function trimFinalConsonants(word: string): {
   if (clusterStart === -1) return { word, tone: null }; // no vowel — nothing to trim
   let suffix = word.slice(clusterEnd);
   let embeddedTone: string | null = null;
-  while (!VALID_FINAL_CONSONANTS.has(suffix.toLowerCase())) {
+  while (suffix !== "" && !FINAL_CONSONANTS.includes(suffix.toLowerCase())) {
     const lastChar = suffix.charAt(suffix.length - 1).toLowerCase();
     if (embeddedTone === null && TONES.has(lastChar)) embeddedTone = lastChar;
     suffix = suffix.slice(0, -1);
@@ -434,30 +425,26 @@ function decodeWord(
       ? new Set([...TONE_MARKERS].filter((c) => !VIETNAMESE_LETTERS.has(c)))
       : TONE_MARKERS;
     let midTone: string | null = null;
-    let newRaw = "";
+    let midToneIdx = -1;
     let hadVowel = false;
     for (let k = 0; k < raw.length; k++) {
       const ch = raw.charAt(k).toLowerCase();
       if (SIMPLE_VOWELS.has(ch)) {
         hadVowel = true;
-        newRaw += raw.charAt(k);
       } else if (hadVowel && eligibleTones.has(ch)) {
-        const hasVowelAfter = raw
-          .slice(k + 1)
-          .split("")
-          .some((c) => SIMPLE_VOWELS.has(c.toLowerCase()));
-        if (hasVowelAfter) {
-          midTone = ch; // last mid-word tone wins
-        } else {
-          newRaw += raw.charAt(k); // trailing marker — keep as-is
+        // Accept as tone if removing it leaves a valid Vietnamese syllable.
+        // This handles tone before a final consonant ("tism"→"tím") and tone
+        // embedded within a final consonant digraph ("thicsh"→"thích").
+        const candidate = raw.slice(0, k) + raw.slice(k + 1);
+        if (isVietnamese(candidate)) {
+          midTone = ch; // last valid mid-word tone wins
+          midToneIdx = k;
         }
-      } else {
-        newRaw += raw.charAt(k);
       }
     }
     if (midTone !== null) {
       tone = midTone;
-      raw = newRaw;
+      raw = raw.slice(0, midToneIdx) + raw.slice(midToneIdx + 1);
     }
   }
 
