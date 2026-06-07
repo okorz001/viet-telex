@@ -84,7 +84,6 @@ const NUCLEI: Map<string, number> = new Map([
   ["ưi", 0],
   ["ưu", 0],
   // nucleus at index 1
-  ["uy", 1],
   ["iê", 1],
   ["iêu", 1],
   ["oa", 1],
@@ -97,6 +96,7 @@ const NUCLEI: Map<string, number> = new Map([
   ["uâ", 1],
   ["uê", 1],
   ["uô", 1],
+  ["uy", 1],
   ["uya", 1],
   ["ươ", 1],
   ["yêu", 1],
