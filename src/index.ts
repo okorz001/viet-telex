@@ -600,5 +600,15 @@ function encodeWord(word: string): string {
     i++;
   }
 
+  // Escape a trailing tone marker so decode won't misinterpret it as a tone.
+  // Only needed when no real Vietnamese tone was encoded (toneChar is empty).
+  if (
+    toneChar === "" &&
+    result.length > 0 &&
+    TONE_MARKERS.has(result.charAt(result.length - 1).toLowerCase())
+  ) {
+    result += result.charAt(result.length - 1).toLowerCase();
+  }
+
   return result + toneChar;
 }

@@ -327,8 +327,6 @@ describe("encode", () => {
     });
   });
 
-  // TODO: broken
-  /*
   describe("tone escape sequences", () => {
     it.for([
       ["as", "ass"],
@@ -341,7 +339,6 @@ describe("encode", () => {
       expect(encode(input)).toBe(output);
     });
   });
-  */
 
   describe("tone mark is placed at the end of the word", () => {
     it.for([
