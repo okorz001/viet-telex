@@ -213,8 +213,7 @@ describe("decode", () => {
           ["jar", "ả"],
           ["war", "ả"],
           ["zero", "ẻ"],
-          // TODO: broken
-          //["show", "sơ"],
+          ["show", "sơ"],
         ])("%s → %s", ([input, output]) => {
           expect(decode(input, { strictWords: true })).toBe(output);
         });
