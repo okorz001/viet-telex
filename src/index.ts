@@ -194,12 +194,15 @@ function isVietnamese(word: string, strictTones = false): boolean {
   // Greedy vowel cluster: try VOWEL_DIGRAPHS first at each position, then
   // simple vowels. This supports diphthongs and triphthongs (e.g. Nguyeenx).
   let hadVowel = false;
+  let vCluster = "";
   while (pos < s.length) {
     const vDg = VOWEL_DIGRAPHS.find((d) => s.startsWith(d, pos));
     if (vDg) {
       pos += vDg.length;
       hadVowel = true;
+      vCluster += DIGRAPHS.get(vDg)!;
     } else if (SIMPLE_VOWELS.has(s.charAt(pos))) {
+      vCluster += s.charAt(pos);
       pos += 1;
       hadVowel = true;
     } else if (!strictTones && hadVowel && TONE_MARKERS.has(s.charAt(pos))) {
@@ -209,6 +212,7 @@ function isVietnamese(word: string, strictTones = false): boolean {
     }
   }
   if (!hadVowel) return false;
+  if (vCluster.length > 1 && !NUCLEI.has(vCluster)) return false;
 
   const fc = FINAL_CONSONANTS.find((c) => s.startsWith(c, pos));
   if (fc) pos += fc.length;

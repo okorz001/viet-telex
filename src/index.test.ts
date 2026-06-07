@@ -179,11 +179,9 @@ describe("decode", () => {
 
       describe("invalid vowel", () => {
         it.for([
-          // TODO: broken
-          //["teas", "teas"],
+          ["teas", "teas"],
           ["treat", "treat"],
-          // TODO: broken
-          //["treats", "treats"],
+          ["treats", "treats"],
         ])("%s → %s", ([input, output]) => {
           expect(decode(input)).toBe(output);
         });
