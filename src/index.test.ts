@@ -146,16 +146,14 @@ describe("decode", () => {
       ["ooos", "oó"],
       ["oois", "ối"],
       ["owis", "ới"],
-      // TODO: broken
-      //["uas", "úa"],
+      ["uas", "úa"],
       ["uees", "uế"],
       ["uis", "úi"],
       ["uoos", "uố"],
       ["uys", "uý"],
       ["uyas", "uýa"],
       ["uyees", "uyế"],
-      // TODO: broken
-      //["uwas", "ứa"],
+      ["uwas", "ứa"],
       ["uwis", "ứi"],
       ["uwows", "ướ"],
       ["uwus", "ứu"],
