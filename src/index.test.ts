@@ -213,15 +213,12 @@ describe("decode", () => {
           ["jar", "ả"],
           ["war", "ả"],
           ["zero", "ẻ"],
-          // TODO: broken
-          //["show", "sơ"],
+          ["show", "sơ"],
         ])("%s → %s", ([input, output]) => {
           expect(decode(input, { strictWords: true })).toBe(output);
         });
       });
 
-      // TODO: broken
-      /*
       describe("invalid vowel", () => {
         it.for([
           ["teas", "té"],
@@ -231,7 +228,6 @@ describe("decode", () => {
           expect(decode(input, { strictWords: true })).toBe(output);
         });
       });
-      */
 
       describe("invalid final consonant", () => {
         it.for([

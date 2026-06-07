@@ -58,6 +58,11 @@ const VOWEL_DIGRAPHS = ["aw", "aa", "ee", "oo", "ow", "uw"];
 const SIMPLE_VOWELS = new Set(["a", "e", "i", "o", "u", "y"]);
 const FINAL_CONSONANTS = ["ch", "ng", "nh", "c", "m", "n", "p", "t"];
 const TONE_MARKERS = new Set(["s", "f", "r", "x", "j", "z"]);
+// INITIAL_CONSONANTS with the Telex digraph "dd" replaced by its decoded form "đ",
+// for matching against already-decoded output in strict-words mode.
+const DECODED_INITIAL_CONSONANTS = INITIAL_CONSONANTS.map((c) =>
+  c === "dd" ? "đ" : c,
+);
 
 // Maps vowel cluster (lowercase) to index of nucleus vowel within that cluster.
 // Unlisted clusters fall back to: last vowel before any trailing consonant.
@@ -298,6 +303,56 @@ export function decode(text: string, options?: DecodeOptions): string {
     .join("");
 }
 
+// After decoding, trim any excess pre-vowel consonants that do not form a
+// valid Vietnamese initial consonant. The longest matching entry in
+// DECODED_INITIAL_CONSONANTS is kept; everything after it up to the first vowel
+// is discarded (e.g. "shơ" → "sơ" because "sh" is not a valid initial consonant
+// but "s" is).
+function trimInitialConsonants(word: string): string {
+  const lower = word.toLowerCase();
+  let vowelStart = 0;
+  while (vowelStart < lower.length && !isVowel(lower.charAt(vowelStart))) {
+    vowelStart++;
+  }
+  if (vowelStart === 0) return word; // starts with a vowel — nothing to trim
+  const prefix = lower.slice(0, vowelStart);
+  const match = DECODED_INITIAL_CONSONANTS.find((c) => prefix.startsWith(c));
+  if (!match || match.length === prefix.length) return word; // exact match or no match
+  return word.slice(0, match.length) + word.slice(vowelStart);
+}
+
+// After decoding, trim the longest vowel cluster down to a valid Vietnamese
+// cluster. Characters are removed from the right end of the cluster until it
+// is either a single vowel or present in NUCLEI (e.g. "ea" → "e").
+function trimVowelCluster(word: string): string {
+  const lower = word.toLowerCase();
+  let clusterStart = -1;
+  let clusterEnd = -1;
+  let i = 0;
+  while (i < lower.length) {
+    if (isVowel(lower.charAt(i))) {
+      const start = i;
+      while (i < lower.length && isVowel(lower.charAt(i))) i++;
+      if (i - start > clusterEnd - clusterStart) {
+        clusterStart = start;
+        clusterEnd = i;
+      }
+    } else {
+      i++;
+    }
+  }
+  if (clusterStart === -1) return word;
+  const originalEnd = clusterEnd;
+  while (
+    clusterEnd - clusterStart > 1 &&
+    !NUCLEI.has(lower.slice(clusterStart, clusterEnd))
+  ) {
+    clusterEnd--;
+  }
+  if (clusterEnd === originalEnd) return word;
+  return word.slice(0, clusterEnd) + word.slice(originalEnd);
+}
+
 // After decoding, trim any trailing characters that do not form a valid
 // Vietnamese syllable-final consonant sequence. Operates on undecorated
 // (pre-tone) text so that isVowel matches correctly.
@@ -468,6 +523,8 @@ function decodeWord(
   // Trim invalid final consonants before tone application so isVowel works on
   // undecorated characters
   if (strictWords) {
+    result = trimInitialConsonants(result);
+    result = trimVowelCluster(result);
     const trimmed = trimFinalConsonants(result);
     result = trimmed.word;
     // Use any tone marker found in the trimmed suffix if none was detected at word end
