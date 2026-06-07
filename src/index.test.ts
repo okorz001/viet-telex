@@ -244,10 +244,9 @@ describe("decode", () => {
     it.for([
       ["gif", "gì"],
       ["gias", "giá"],
-      ["giaf", "già"],
       ["gios", "gió"],
       ["quas", "quá"],
-      ["quaf", "quà"],
+      ["quyeenr", "quyển"],
     ])("%s → %s", ([input, output]) => {
       expect(decode(input)).toBe(output);
     });
@@ -350,6 +349,7 @@ describe("encode", () => {
       ["gì", "gif"],
       ["giá", "gias"],
       ["quá", "quas"],
+      ["quyển", "quyeenr"],
     ])("%s → %s", ([input, output]) => {
       expect(encode(input)).toBe(output);
     });

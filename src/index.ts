@@ -104,6 +104,7 @@ const NUCLEI: Map<string, number> = new Map([
   ["uy", 1],
   ["uya", 1],
   ["ươ", 1],
+  ["yê", 1],
   ["yêu", 1],
   // nucleus at index 2
   ["uyê", 2],
