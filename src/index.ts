@@ -127,25 +127,55 @@ function nucleusIndex(cluster: string): number {
 }
 
 // Apply a combining tone mark to the nucleus vowel within a decoded word.
-function applyTone(word: string, combiningMark: string): string {
+// vowelStart: position where the vowel cluster search begins (used to skip
+// the terminal vowel letter of "gi"/"qu" initial consonants). When no vowel
+// cluster is found at or after vowelStart, falls back to searching the full word.
+function applyTone(
+  word: string,
+  combiningMark: string,
+  vowelStart = 0,
+): string {
   if (!combiningMark) return word; // neutral tone — no mark
 
-  // Find the vowel cluster: longest run of vowels
+  // Scan for vowel runs. For each run [runStart, runEnd):
+  //   - If the run starts at or after vowelStart, consider it as-is (preferred).
+  //   - If the run starts before vowelStart but extends past it, truncate its
+  //     effective start to vowelStart (e.g. "ia" in "gia" with vowelStart=2 → "a").
+  //   - If the run lies entirely before vowelStart (e.g. "i" in "gi"), keep it
+  //     as a fallback used only when no preferred cluster exists.
   const lower = word.toLowerCase();
   let clusterStart = -1;
   let clusterEnd = -1;
+  let fbStart = -1;
+  let fbEnd = -1;
   let i = 0;
   while (i < lower.length) {
     if (isVowel(lower.charAt(i))) {
-      const start = i;
+      const runStart = i;
       while (i < lower.length && isVowel(lower.charAt(i))) i++;
-      if (i - start > clusterEnd - clusterStart) {
-        clusterStart = start;
-        clusterEnd = i;
+      const runEnd = i;
+      const effStart = Math.max(runStart, vowelStart);
+      if (effStart < runEnd) {
+        // Run extends into or starts within the preferred zone.
+        if (runEnd - effStart > clusterEnd - clusterStart) {
+          clusterStart = effStart;
+          clusterEnd = runEnd;
+        }
+      } else {
+        // Run lies entirely before vowelStart — save as fallback.
+        if (runEnd - runStart > fbEnd - fbStart) {
+          fbStart = runStart;
+          fbEnd = runEnd;
+        }
       }
     } else {
       i++;
     }
+  }
+
+  if (clusterStart === -1) {
+    clusterStart = fbStart;
+    clusterEnd = fbEnd;
   }
 
   if (clusterStart === -1) return word; // no vowel found — shouldn't happen
@@ -175,17 +205,19 @@ function isVietnamese(word: string, strictTones = false): boolean {
   }
 
   let pos = 0;
+  // Greedy vowel cluster: try VOWEL_DIGRAPHS first at each position, then
+  // simple vowels. This supports diphthongs and triphthongs (e.g. Nguyeenx).
+  let hadVowel = false;
 
   if (!SIMPLE_VOWELS.has(s.charAt(0))) {
     const match = INITIAL_CONSONANTS.find((c) => s.startsWith(c));
     if (!match) return false;
     pos = match.length;
     if (pos === s.length) return true; // consonant-only word (dd → đ)
+    // "gi" and "qu" end in a vowel letter; that letter counts toward hadVowel
+    // so a bare tone marker (e.g. "gif") is recognised as valid Vietnamese.
+    if (match === "gi" || match === "qu") hadVowel = true;
   }
-
-  // Greedy vowel cluster: try VOWEL_DIGRAPHS first at each position, then
-  // simple vowels. This supports diphthongs and triphthongs (e.g. Nguyeenx).
-  let hadVowel = false;
   let vCluster = "";
   while (pos < s.length) {
     const vDg = VOWEL_DIGRAPHS.find((d) => s.startsWith(d, pos));
@@ -518,9 +550,14 @@ function decodeWord(
     if (tone === null) tone = trimmed.tone;
   }
 
-  // Apply tone
+  // Apply tone. For "gi"/"qu" initial consonants, pass consonantLen=2 so that
+  // applyTone searches for the vowel cluster starting after the terminal vowel
+  // letter of the consonant (e.g. "gia" → cluster is "a", not "ia").
+  let consonantLen = 0;
+  const rl = result.toLowerCase();
+  if (rl.startsWith("gi") || rl.startsWith("qu")) consonantLen = 2;
   if (tone !== null) {
-    result = applyTone(result, TONES.get(tone) ?? "");
+    result = applyTone(result, TONES.get(tone) ?? "", consonantLen);
   }
 
   return result;
