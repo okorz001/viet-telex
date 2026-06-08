@@ -1,8 +1,49 @@
 import { describe, it, expect } from "vitest";
-import { encode, decode } from "./index.js";
+import { encode, decode, render, type Word } from "./index.js";
 
 // all tests should have a single assertion
 // test names should be either "<input> → <output>"
+
+describe("render", () => {
+  const cases: [Word, string][] = [
+    // plain concatenation of parts
+    [{ initialConsonant: "b", vowel: "a" }, "ba"],
+    [{ initialConsonant: "b", vowel: "a", finalConsonant: "nh" }, "banh"],
+    // Telex digraph decoding
+    [{ initialConsonant: "dd", vowel: "a" }, "đa"],
+    [{ vowel: "uw" }, "ư"],
+    [{ vowel: "uaa" }, "uâ"],
+    // escaped digraph (doubled second character → literal)
+    [{ vowel: "ooo" }, "oo"],
+    // tone marks on a single vowel
+    [{ vowel: "a", tone: "s" }, "á"],
+    [{ vowel: "a", tone: "f" }, "à"],
+    [{ vowel: "a", tone: "r" }, "ả"],
+    [{ vowel: "a", tone: "x" }, "ã"],
+    [{ vowel: "a", tone: "j" }, "ạ"],
+    // no tone leaves the vowel bare
+    [{ vowel: "a" }, "a"],
+    // nucleus placement on compound vowels
+    [{ vowel: "oa", tone: "s" }, "oá"],
+    [{ vowel: "uyee", tone: "s" }, "uyế"],
+    // gi/qu place the tone past the consonant's trailing vowel letter
+    [{ initialConsonant: "gi", vowel: "a", tone: "s" }, "giá"],
+    [{ initialConsonant: "gi", tone: "f" }, "gì"],
+    [
+      { initialConsonant: "qu", vowel: "yee", finalConsonant: "n", tone: "r" },
+      "quyển",
+    ],
+    // full syllable with a final consonant and tone
+    [
+      { initialConsonant: "b", vowel: "a", finalConsonant: "nh", tone: "s" },
+      "bánh",
+    ],
+  ];
+
+  it.for(cases)("%j → %s", ([word, output]) => {
+    expect(render(word)).toBe(output);
+  });
+});
 
 describe("decode", () => {
   describe("extended Latin digraphs", () => {

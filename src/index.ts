@@ -195,24 +195,84 @@ function applyTone(
   ).normalize("NFC");
 }
 
-interface Word {
+/**
+ * A parsed Vietnamese syllable with each part stored in its Telex (encoded) form
+ * rather than decoded Unicode. Telex keeps parsing cheap — escapes are just a
+ * doubled character (e.g. `dd` for đ, `uaa` for uâ) — and keeps the model easy to
+ * read when logging. {@link render} decodes it to Unicode.
+ *
+ * Exported temporarily so the new decoder components can be unit-tested in
+ * isolation while `decode` is being refactored; it will become internal again
+ * once `decode` is rewritten to use them.
+ */
+export interface Word {
+  /** Initial consonant in Telex, e.g. `b`, `dd` (đ), `ng`, `qu`. */
   initialConsonant?: string;
+  /** Vowel cluster in Telex, e.g. `a`, `uw` (ư), `uaa` (uâ). */
   vowel?: string;
+  /** Final consonant, e.g. `c`, `ch`, `ng`, `t`. */
   finalConsonant?: string;
-  // Telex tone letter ("s"|"f"|"r"|"x"|"j"); absent means ngang (no mark).
-  // "z" is never stored — it clears the tone, leaving this field undefined.
+  /**
+   * Telex tone letter (`s`|`f`|`r`|`x`|`j`); absent means ngang (no mark). `z` is
+   * never stored — it clears the tone, leaving this field undefined.
+   */
   tone?: string;
 }
 
-// Renders a parsed Vietnamese syllable into proper Unicode NFC. Applies the
-// tone mark to the nucleus vowel using the existing applyTone logic, with the
-// consonantLen=2 adjustment for "gi"/"qu" initial consonants so tone placement
-// looks past the terminal vowel letter of the consonant.
-function render(word: Word): string {
-  const body =
+// Decodes Telex digraphs (aw→ă, aa→â, dd→đ, ee→ê, oo→ô, ow→ơ, uw→ư) within a
+// string, preserving the case of the first character. A doubled second character
+// escapes the digraph, yielding the two literal characters (e.g. "ooo"→"oo",
+// "aww"→"aw"). Other characters pass through unchanged.
+function decodeTelex(s: string): string {
+  let result = "";
+  let i = 0;
+  while (i < s.length) {
+    const digraph = s.slice(i, i + 2).toLowerCase();
+    const decoded = DIGRAPHS.get(digraph);
+    if (decoded === undefined) {
+      result += s.charAt(i);
+      i += 1;
+      continue;
+    }
+    const isUpper =
+      s.charAt(i) === s.charAt(i).toUpperCase() &&
+      s.charAt(i) !== s.charAt(i).toLowerCase();
+    if (
+      i + 2 < s.length &&
+      s.charAt(i + 2).toLowerCase() === s.charAt(i + 1).toLowerCase()
+    ) {
+      // Escaped digraph: emit the two literal characters, skip the escape char.
+      result += s.charAt(i) + s.charAt(i + 1);
+      i += 3;
+    } else {
+      result += isUpper ? decoded.toUpperCase() : decoded;
+      i += 2;
+    }
+  }
+  return result;
+}
+
+/**
+ * Renders a parsed Vietnamese syllable into proper Unicode text (NFC).
+ *
+ * Each part of the {@link Word} is Telex-encoded; this decodes the digraphs
+ * (e.g. `dd`→đ, `uw`→ư, with a doubled character escaping the digraph) and then
+ * places the tone mark on the nucleus vowel via {@link applyTone}, using a
+ * consonant length of 2 for `gi`/`qu` initials so the mark lands past the
+ * consonant's trailing vowel letter.
+ *
+ * Exported temporarily for unit testing during the decoder refactor; see
+ * {@link Word}.
+ *
+ * @param word - A parsed syllable with Telex-encoded parts; see {@link Word}
+ * @returns The syllable as Unicode Vietnamese text in NFC form
+ */
+export function render(word: Word): string {
+  const body = decodeTelex(
     (word.initialConsonant ?? "") +
-    (word.vowel ?? "") +
-    (word.finalConsonant ?? "");
+      (word.vowel ?? "") +
+      (word.finalConsonant ?? ""),
+  );
   if (!word.tone) return body.normalize("NFC");
   const rl = body.toLowerCase();
   const consonantLen = rl.startsWith("gi") || rl.startsWith("qu") ? 2 : 0;
@@ -585,10 +645,20 @@ function decodeWord(
     if (tone === null) tone = trimmed.tone;
   }
 
-  // Apply tone via render. The assembled result string is passed as
-  // initialConsonant so render concatenates it unchanged, then applies the tone
-  // mark to the nucleus vowel with the correct consonantLen for "gi"/"qu".
-  return render({ initialConsonant: result, tone: tone ?? undefined });
+  // Apply tone. For "gi"/"qu" initial consonants, pass consonantLen=2 so that
+  // applyTone first looks for a vowel cluster after the terminal consonant vowel
+  // (e.g. "gia" → cluster "a", not "ia"). When no preferred cluster exists there,
+  // applyTone falls back to the full vowel run including the terminal vowel letter
+  // (e.g. "gi" alone → falls back to "i"; "quyê" → effStart clips run to "yê",
+  // whose fallback nucleusIndex correctly lands on "ê").
+  let consonantLen = 0;
+  const rl = result.toLowerCase();
+  if (rl.startsWith("gi") || rl.startsWith("qu")) consonantLen = 2;
+  if (tone !== null) {
+    result = applyTone(result, TONES.get(tone) ?? "", consonantLen);
+  }
+
+  return result;
 }
 
 /**
