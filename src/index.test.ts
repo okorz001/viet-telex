@@ -240,6 +240,19 @@ describe("decode", () => {
     });
   });
 
+  describe("gi and qu consonants", () => {
+    it.for([
+      ["gif", "gì"],
+      ["gias", "giá"],
+      ["gios", "gió"],
+      ["quas", "quá"],
+      ["ques", "qué"],
+      ["quyeenr", "quyển"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode(input)).toBe(output);
+    });
+  });
+
   describe("tone marks mid-word", () => {
     describe("lenient by default", () => {
       it.for([
@@ -327,6 +340,18 @@ describe("encode", () => {
       ["ax", "axx"],
       ["aj", "ajj"],
       ["az", "azz"],
+    ])("%s → %s", ([input, output]) => {
+      expect(encode(input)).toBe(output);
+    });
+  });
+
+  describe("gi and qu consonants", () => {
+    it.for([
+      ["gì", "gif"],
+      ["giá", "gias"],
+      ["quá", "quas"],
+      ["qué", "ques"],
+      ["quyển", "quyeenr"],
     ])("%s → %s", ([input, output]) => {
       expect(encode(input)).toBe(output);
     });
