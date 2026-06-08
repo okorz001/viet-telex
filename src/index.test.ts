@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { encode, decode, render, type Word } from "./index.js";
+import { encode, decode, render, validate, type Word } from "./index.js";
 
 // all tests should have a single assertion
 // test names should be either "<input> → <output>"
@@ -42,6 +42,43 @@ describe("render", () => {
 
   it.for(cases)("%j → %s", ([word, output]) => {
     expect(render(word)).toBe(output);
+  });
+});
+
+describe("validate", () => {
+  const cases: [Word, boolean][] = [
+    // minimal valid syllables
+    [{ vowel: "a" }, true],
+    [{ initialConsonant: "b", vowel: "a" }, true],
+    [{ initialConsonant: "b", vowel: "a", finalConsonant: "nh" }, true],
+    [{ initialConsonant: "ngh", vowel: "ee" }, true], // nghê
+    // Telex digraph vowels decode before checking
+    [{ vowel: "uw" }, true], // ư
+    [{ vowel: "uaa" }, true], // uâ
+    // valid compound vowel clusters
+    [{ vowel: "oa" }, true],
+    [{ vowel: "uyee" }, true], // uyê
+    // gi/qu supply their own nucleus (the i/u)
+    [{ initialConsonant: "gi" }, true], // gi
+    [{ initialConsonant: "gi", finalConsonant: "n" }, true], // gìn
+    [{ initialConsonant: "qu", vowel: "yee", finalConsonant: "n" }, true], // quyê(n)
+    // bare consonant token, e.g. đ from dd
+    [{ initialConsonant: "dd" }, true],
+    // invalid initial consonant
+    [{ initialConsonant: "f", vowel: "a" }, false],
+    [{ initialConsonant: "sh", vowel: "o" }, false],
+    // invalid vowel cluster
+    [{ initialConsonant: "t", vowel: "ea" }, false],
+    // invalid final consonant
+    [{ initialConsonant: "s", vowel: "ee", finalConsonant: "d" }, false],
+    // a final consonant with no vowel is not a syllable
+    [{ finalConsonant: "n" }, false],
+    // empty word
+    [{}, false],
+  ];
+
+  it.for(cases)("%j → %s", ([word, valid]) => {
+    expect(validate(word)).toBe(valid);
   });
 });
 

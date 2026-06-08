@@ -279,6 +279,53 @@ export function render(word: Word): string {
   return applyTone(body, TONES.get(word.tone) ?? "", consonantLen);
 }
 
+/**
+ * Reports whether a parsed syllable is structurally valid Vietnamese.
+ *
+ * The check is intentionally lenient: it mirrors the structural rules the
+ * decoder relies on, not the full spelling rules in docs/vietnamese.md. In
+ * particular it does NOT enforce which vowel clusters must, may, or may not take
+ * a final consonant — enforcing those would reject valid open-syllable forms the
+ * decoder must still render (e.g. `uyế`, `ướ`). A word is valid when:
+ *
+ * - the initial consonant is empty or a known Telex initial (incl. `dd`, `gi`,
+ *   `qu`);
+ * - the final consonant is empty or a valid Vietnamese final;
+ * - the vowel decodes to a single Vietnamese vowel or a cluster in `NUCLEI` — and
+ *   for `gi`/`qu` the consonant's trailing i/u may complete that cluster.
+ *
+ * A vowel-less token is accepted only as `gi`/`qu` (whose i/u is the nucleus) or
+ * a bare initial consonant such as `dd` (đ), matching how whole-consonant tokens
+ * decode.
+ *
+ * Exported temporarily for unit testing during the decoder refactor; see
+ * {@link Word}.
+ *
+ * @param word - A parsed syllable with Telex-encoded parts; see {@link Word}
+ * @returns `true` if the syllable is structurally valid Vietnamese
+ */
+export function validate(word: Word): boolean {
+  const initial = (word.initialConsonant ?? "").toLowerCase();
+  if (initial !== "" && !INITIAL_CONSONANTS.includes(initial)) return false;
+
+  const final = (word.finalConsonant ?? "").toLowerCase();
+  if (final !== "" && !FINAL_CONSONANTS.includes(final)) return false;
+
+  const giqu = initial === "gi" || initial === "qu";
+  const vowel = decodeTelex(word.vowel ?? "").toLowerCase();
+  if (vowel === "") {
+    // No explicit vowel: valid as "gi"/"qu" (the i/u is the nucleus) or a bare
+    // initial consonant (e.g. "đ" from "dd"); a final still needs a real vowel.
+    return giqu || (initial !== "" && final === "");
+  }
+  if (vowel.length === 1) return VOWELS.has(vowel);
+  if (NUCLEI.has(vowel)) return true;
+  // "gi"/"qu": prepend the consonant's trailing vowel letter to complete the
+  // cluster (e.g. qu + "yê" → "uyê").
+  const prefix = initial === "qu" ? "u" : initial === "gi" ? "i" : "";
+  return prefix !== "" && NUCLEI.has(prefix + vowel);
+}
+
 function isVietnamese(word: string, strictTones = false): boolean {
   const s = word.toLowerCase();
 
