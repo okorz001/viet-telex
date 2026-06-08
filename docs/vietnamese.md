@@ -93,6 +93,29 @@ Tone marks are placed on the third letter of the following:
 
 > uyê
 
+## "gi-" & "qu-" Spelling Rules
+
+"gi" and "qu" are consonant digraphs, even though "i" and "u" are individually vowels. This allows the construction of words that appear to contain invalid vowel clusters.
+
+Word | Initial Consonant | Vowel | Final Consonant
+--- | --- | --- | ---
+giờ | gi | ơ | (none)
+quét | qu | e | t
+
+When combined with a vowel cluster that starts with the same vowel, the duplicate vowel letter is dropped.
+
+Word | Initial Consonant | Vowel | Final Consonant
+--- | --- | --- | ---
+gì | gi | i | (none)
+giết | gi | iê | t
+quyển | qu | uyê | n
+
+When ambiguous, the consonant and vowel are fully separate. This is important for tone mark placement.
+
+Word | Initial Consonant | Vowel | Final Consonant
+--- | --- | --- | ---
+giá | gi | a | (none)
+
 ## Links
 
 * [Vietnamese alphabet](https://en.wikipedia.org/wiki/Vietnamese_alphabet) on Wikipedia
