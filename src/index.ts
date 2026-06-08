@@ -195,6 +195,30 @@ function applyTone(
   ).normalize("NFC");
 }
 
+interface Word {
+  initialConsonant?: string;
+  vowel?: string;
+  finalConsonant?: string;
+  // Telex tone letter ("s"|"f"|"r"|"x"|"j"); absent means ngang (no mark).
+  // "z" is never stored — it clears the tone, leaving this field undefined.
+  tone?: string;
+}
+
+// Renders a parsed Vietnamese syllable into proper Unicode NFC. Applies the
+// tone mark to the nucleus vowel using the existing applyTone logic, with the
+// consonantLen=2 adjustment for "gi"/"qu" initial consonants so tone placement
+// looks past the terminal vowel letter of the consonant.
+function render(word: Word): string {
+  const body =
+    (word.initialConsonant ?? "") +
+    (word.vowel ?? "") +
+    (word.finalConsonant ?? "");
+  if (!word.tone) return body.normalize("NFC");
+  const rl = body.toLowerCase();
+  const consonantLen = rl.startsWith("gi") || rl.startsWith("qu") ? 2 : 0;
+  return applyTone(body, TONES.get(word.tone) ?? "", consonantLen);
+}
+
 function isVietnamese(word: string, strictTones = false): boolean {
   const s = word.toLowerCase();
 
@@ -561,20 +585,10 @@ function decodeWord(
     if (tone === null) tone = trimmed.tone;
   }
 
-  // Apply tone. For "gi"/"qu" initial consonants, pass consonantLen=2 so that
-  // applyTone first looks for a vowel cluster after the terminal consonant vowel
-  // (e.g. "gia" → cluster "a", not "ia"). When no preferred cluster exists there,
-  // applyTone falls back to the full vowel run including the terminal vowel letter
-  // (e.g. "gi" alone → falls back to "i"; "quyê" → effStart clips run to "yê",
-  // whose fallback nucleusIndex correctly lands on "ê").
-  let consonantLen = 0;
-  const rl = result.toLowerCase();
-  if (rl.startsWith("gi") || rl.startsWith("qu")) consonantLen = 2;
-  if (tone !== null) {
-    result = applyTone(result, TONES.get(tone) ?? "", consonantLen);
-  }
-
-  return result;
+  // Apply tone via render. The assembled result string is passed as
+  // initialConsonant so render concatenates it unchanged, then applies the tone
+  // mark to the nucleus vowel with the correct consonantLen for "gi"/"qu".
+  return render({ initialConsonant: result, tone: tone ?? undefined });
 }
 
 /**
