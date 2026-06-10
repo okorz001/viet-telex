@@ -38,7 +38,7 @@ describe("render", () => {
     [{ initialConsonant: "gi", vowel: "a", tone: "s" }, "giá"],
     [{ initialConsonant: "gi", tone: "f" }, "gì"],
     [
-      { initialConsonant: "qu", vowel: "yee", finalConsonant: "n", tone: "r" },
+      { initialConsonant: "qu", vowel: "uyee", finalConsonant: "n", tone: "r" },
       "quyển",
     ],
     // full syllable with a final consonant and tone
@@ -69,7 +69,7 @@ describe("validate", () => {
     // gi/qu supply their own nucleus (the i/u)
     [{ initialConsonant: "gi" }, true], // gi
     [{ initialConsonant: "gi", finalConsonant: "n" }, true], // gìn
-    [{ initialConsonant: "qu", vowel: "yee", finalConsonant: "n" }, true], // quyê(n)
+    [{ initialConsonant: "qu", vowel: "uyee", finalConsonant: "n" }, true], // quyên
     // bare consonant token, e.g. đ from dd
     [{ initialConsonant: "dd" }, true],
     // invalid initial consonant

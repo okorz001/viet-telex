@@ -268,14 +268,33 @@ function decodeTelex(s: string): string {
  * @returns The syllable as Unicode Vietnamese text in NFC form
  */
 export function render(word: Word): string {
-  const body = decodeTelex(
-    (word.initialConsonant ?? "") +
-      (word.vowel ?? "") +
-      (word.finalConsonant ?? ""),
-  );
+  const initial = word.initialConsonant ?? "";
+  const vowel = word.vowel ?? "";
+  const li = initial.toLowerCase();
+  const lv = vowel.toLowerCase();
+
+  // When gi/qu's trailing vowel letter is already the first letter of the vowel
+  // field (the complete vowel is stored there), emit only the leading consonant
+  // letter so the output isn't doubled (e.g. qu + uyee → q + uyee = "quyee").
+  // consonantLen=1 tells applyTone the vowel cluster begins right after that letter.
+  let consonantPart: string;
+  let consonantLen: number;
+  if (
+    (li === "gi" && lv.startsWith("i")) ||
+    (li === "qu" && lv.startsWith("u"))
+  ) {
+    consonantPart = initial.charAt(0);
+    consonantLen = 1;
+  } else if (li === "gi" || li === "qu") {
+    consonantPart = initial;
+    consonantLen = 2;
+  } else {
+    consonantPart = initial;
+    consonantLen = 0;
+  }
+
+  const body = decodeTelex(consonantPart + vowel + (word.finalConsonant ?? ""));
   if (!word.tone) return body.normalize("NFC");
-  const rl = body.toLowerCase();
-  const consonantLen = rl.startsWith("gi") || rl.startsWith("qu") ? 2 : 0;
   return applyTone(body, TONES.get(word.tone) ?? "", consonantLen);
 }
 
