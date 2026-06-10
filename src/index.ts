@@ -326,6 +326,66 @@ export function validate(word: Word): boolean {
   return prefix !== "" && NUCLEI.has(prefix + vowel);
 }
 
+/**
+ * Stateful Telex decoder that buffers one word at a time.
+ *
+ * Call {@link write} once per letter, then {@link read} to get the decoded
+ * Vietnamese output. {@link clear} resets the buffer so the instance can be
+ * reused for the next word.
+ *
+ * Exported temporarily for unit testing during the decoder refactor; it will
+ * become internal once `decode` is rewritten to use it.
+ *
+ * @param options - Decoding options; see {@link DecodeOptions}
+ */
+export class Decoder {
+  private readonly strictWords: boolean;
+  private readonly strictTones: boolean;
+  private buf = "";
+
+  constructor(options?: DecodeOptions) {
+    this.strictWords = options?.strictWords ?? false;
+    this.strictTones = options?.strictTones ?? false;
+  }
+
+  /** Append one letter to the internal buffer. */
+  write(letter: string): void {
+    this.buf += letter;
+  }
+
+  /** Decode the buffered word and return the result. Does not clear the buffer. */
+  read(): string {
+    // Stub: full state machine to be implemented in the next step.
+    return this.buf;
+  }
+
+  /** Reset the buffer for the next word. */
+  clear(): void {
+    this.buf = "";
+  }
+}
+
+/**
+ * Temporary replacement for {@link decode} that routes through {@link Decoder}.
+ * Will replace `decode` once `Decoder.read()` is fully implemented.
+ *
+ * @param text - ASCII text using Telex encoding
+ * @param options - Optional decoding options; see {@link DecodeOptions}
+ * @returns Vietnamese Unicode text in NFC form
+ */
+export function decode2(text: string, options?: DecodeOptions): string {
+  const dec = new Decoder(options);
+  const tokens = text.split(/([^a-zA-Z]+)/);
+  return tokens
+    .map((token) => {
+      if (!token || /[^a-zA-Z]/.test(token)) return token;
+      dec.clear();
+      for (const ch of token) dec.write(ch);
+      return dec.read();
+    })
+    .join("");
+}
+
 function isVietnamese(word: string, strictTones = false): boolean {
   const s = word.toLowerCase();
 

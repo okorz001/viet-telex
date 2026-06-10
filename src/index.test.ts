@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { encode, decode, render, validate, type Word } from "./index.js";
+import {
+  encode,
+  decode,
+  decode2,
+  render,
+  validate,
+  Decoder,
+  type Word,
+} from "./index.js";
 
 // all tests should have a single assertion
 // test names should be either "<input> → <output>"
@@ -79,6 +87,32 @@ describe("validate", () => {
 
   it.for(cases)("%j → %s", ([word, valid]) => {
     expect(validate(word)).toBe(valid);
+  });
+});
+
+describe("Decoder stub", () => {
+  it("passes through a single word unchanged", () => {
+    const dec = new Decoder();
+    for (const ch of "banhs") dec.write(ch);
+    expect(dec.read()).toBe("banhs");
+  });
+
+  it("clear resets the buffer", () => {
+    const dec = new Decoder();
+    for (const ch of "abc") dec.write(ch);
+    dec.clear();
+    for (const ch of "xyz") dec.write(ch);
+    expect(dec.read()).toBe("xyz");
+  });
+});
+
+describe("decode2 stub", () => {
+  it("passes text through unchanged (stub)", () => {
+    expect(decode2("banhs mif")).toBe("banhs mif");
+  });
+
+  it("separators pass through unchanged", () => {
+    expect(decode2("hello, world!")).toBe("hello, world!");
   });
 });
 
