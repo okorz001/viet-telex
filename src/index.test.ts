@@ -133,29 +133,144 @@ describe("parseWord", () => {
   });
 });
 
-describe("Decoder stub", () => {
-  it("passes through a single word unchanged", () => {
+describe("Decoder", () => {
+  it("decodes a buffered word", () => {
     const dec = new Decoder();
     for (const ch of "banhs") dec.write(ch);
-    expect(dec.read()).toBe("banhs");
+    expect(dec.read()).toBe("bánh");
   });
 
-  it("clear resets the buffer", () => {
+  it("clear resets the buffer between words", () => {
     const dec = new Decoder();
-    for (const ch of "abc") dec.write(ch);
+    for (const ch of "phowr") dec.write(ch);
     dec.clear();
-    for (const ch of "xyz") dec.write(ch);
-    expect(dec.read()).toBe("xyz");
+    for (const ch of "gif") dec.write(ch);
+    expect(dec.read()).toBe("gì");
   });
 });
 
-describe("decode2 stub", () => {
-  it("passes text through unchanged (stub)", () => {
-    expect(decode2("banhs mif")).toBe("banhs mif");
+describe("decode2 matches decode (non-strict path)", () => {
+  // The new Decoder pipeline must reproduce the existing decode output exactly.
+  // strictWords is covered by decode2 delegating to the original pipeline, so
+  // these cases exercise the default and strictTones routes.
+  const inputs = [
+    // digraphs and their escapes (incl. case)
+    "aa",
+    "aw",
+    "dd",
+    "ee",
+    "oo",
+    "ow",
+    "uw",
+    "Ow",
+    "oW",
+    "aaa",
+    "aww",
+    "ddd",
+    "eee",
+    "ooo",
+    "oww",
+    "uww",
+    "Oww",
+    "oWw",
+    "owW",
+    // tones, overwrite, and tone escapes
+    "as",
+    "af",
+    "ar",
+    "ax",
+    "aj",
+    "az",
+    "afs",
+    "asf",
+    "azs",
+    "asz",
+    "ass",
+    "aff",
+    "arr",
+    "axx",
+    "ajj",
+    "azz",
+    // initial consonants that look like tones
+    "sa",
+    "ra",
+    "xa",
+    // tone placement on compound vowels
+    "ais",
+    "aos",
+    "aus",
+    "ays",
+    "aaus",
+    "aays",
+    "eos",
+    "eeus",
+    "ias",
+    "iees",
+    "ieeus",
+    "ius",
+    "oas",
+    "oais",
+    "oaos",
+    "oaws",
+    "oes",
+    "oeos",
+    "ois",
+    "ooos",
+    "oois",
+    "owis",
+    "uas",
+    "uees",
+    "uis",
+    "uoos",
+    "uys",
+    "uyas",
+    "uyees",
+    "uwas",
+    "uwis",
+    "uwows",
+    "uwus",
+    "yeeus",
+    // gi / qu
+    "gif",
+    "gias",
+    "gios",
+    "quas",
+    "ques",
+    "quyeenr",
+    // non-Vietnamese passthrough
+    "fox",
+    "jar",
+    "war",
+    "zero",
+    "show",
+    "teas",
+    "treat",
+    "treats",
+    "odd",
+    "seed",
+    // mid-word tones
+    "mafu",
+    "tism",
+    "thicsh",
+    // multi-word with separators
+    "phowr",
+    "banhs mif",
+    "show me the banhs mif",
+    "banhs mif for me",
+  ];
+
+  describe("default options", () => {
+    it.for(inputs)("%s", (input) => {
+      expect(decode2(input)).toBe(decode(input));
+    });
   });
 
-  it("separators pass through unchanged", () => {
-    expect(decode2("hello, world!")).toBe("hello, world!");
+  describe("with strictTones", () => {
+    it.for(inputs)("%s", (input) => {
+      expect(decode2(input, { strictTones: true })).toBe(
+        decode(input, { strictTones: true }),
+      );
+    });
   });
 });
 

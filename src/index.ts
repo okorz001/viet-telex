@@ -483,8 +483,83 @@ export class Decoder {
 
   /** Decode the buffered word and return the result. Does not clear the buffer. */
   read(): string {
-    // Stub: full state machine to be implemented in the next step.
-    return this.buf;
+    const word = this.buf;
+
+    // Strict-words mode still uses the original pipeline; it will be folded into
+    // the state machine in a later step.
+    if (this.strictWords) return decodeWord(word, true, this.strictTones);
+
+    // Non-strict: a token that is not valid Vietnamese passes through unchanged.
+    if (!isVietnamese(word, this.strictTones)) return word;
+
+    const { raw, tone, escaped } = this.resolveTone(word);
+
+    // An escape (doubled tone or digraph letter) yields literal characters:
+    // decode digraphs but neither parse structurally nor apply a tone.
+    if (escaped) return decodeTelex(raw);
+
+    const parsed = parseWord(raw);
+    // parseWord rejects literal escape sequences (e.g. "Oww" → "ow"); fall back
+    // to a plain Telex decode when the residue is not a clean syllable.
+    if (!parsed) return decodeTelex(raw);
+
+    // "z" is the neutral tone — it clears any mark, so leave tone unset.
+    if (tone !== null && tone !== "z") parsed.tone = tone;
+    return render(parsed);
+  }
+
+  // Resolve the word's tone in two tiers and return the tone-stripped residue.
+  // Tier 1 scans the end of the word (last non-escaped tone wins; a doubled tone
+  // letter is an escape). Tier 2 (lenient tones only) scans mid-word for a marker
+  // whose removal leaves a valid syllable (e.g. "mafu" → "màu").
+  private resolveTone(word: string): {
+    raw: string;
+    tone: string | null;
+    escaped: boolean;
+  } {
+    let tone: string | null = null;
+    let raw = word;
+    let escaped = false;
+
+    while (raw.length >= 1) {
+      const last = raw.charAt(raw.length - 1).toLowerCase();
+      if (!TONES.has(last)) break;
+      if (
+        raw.length >= 2 &&
+        raw.charAt(raw.length - 2).toLowerCase() === last
+      ) {
+        raw = raw.slice(0, -1);
+        tone = null;
+        escaped = true;
+        break;
+      }
+      if (tone === null) tone = last;
+      raw = raw.slice(0, -1);
+    }
+
+    if (!this.strictTones && tone === null && !escaped) {
+      let midTone: string | null = null;
+      let midToneIdx = -1;
+      let hadVowel = false;
+      for (let k = 0; k < raw.length; k++) {
+        const ch = raw.charAt(k).toLowerCase();
+        if (SIMPLE_VOWELS.has(ch)) {
+          hadVowel = true;
+        } else if (hadVowel && TONE_MARKERS.has(ch)) {
+          const candidate = raw.slice(0, k) + raw.slice(k + 1);
+          if (isVietnamese(candidate)) {
+            midTone = ch;
+            midToneIdx = k;
+          }
+        }
+      }
+      if (midTone !== null) {
+        tone = midTone;
+        raw = raw.slice(0, midToneIdx) + raw.slice(midToneIdx + 1);
+      }
+    }
+
+    return { raw, tone, escaped };
   }
 
   /** Reset the buffer for the next word. */
