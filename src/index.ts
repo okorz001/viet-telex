@@ -346,6 +346,115 @@ export function validate(word: Word): boolean {
 }
 
 /**
+ * The four states of the syllable parser. A Vietnamese syllable is walked in
+ * order: an optional initial consonant, the vowel cluster, then an optional
+ * final consonant. `INVALID` is terminal — the buffered letters cannot form a
+ * structurally valid Vietnamese syllable.
+ */
+type ParseState = "INITIAL_CONSONANT" | "VOWEL" | "FINAL_CONSONANT" | "INVALID";
+
+// True when a Telex vowel cluster decodes to a complete, standalone Vietnamese
+// nucleus (a single vowel or a known cluster). Used to decide whether a "gi"/"qu"
+// initial must lend its trailing i/u to complete the cluster.
+function isCompleteNucleus(vowel: string): boolean {
+  const decoded = decodeTelex(vowel).toLowerCase();
+  if (decoded.length <= 1) return VOWELS.has(decoded);
+  return NUCLEI.has(decoded);
+}
+
+/**
+ * Parses a clean string of letters into a {@link Word} using a four-state walk
+ * (initial consonant → vowel → final consonant, with an invalid terminal state).
+ *
+ * The input must already have its tone letters removed; tone resolution is the
+ * caller's responsibility. Letters are stored in their Telex form (digraph
+ * escapes preserved), so {@link render} decodes the result. For `gi`/`qu`
+ * initials whose vowel cluster needs the consonant's trailing i/u to be valid
+ * (e.g. `qu` + `yee` → vowel `uyee`), that letter is prepended to the vowel.
+ *
+ * Exported temporarily for unit testing during the decoder refactor; see
+ * {@link Word}.
+ *
+ * @param letters - A word's letters with tones already stripped
+ * @returns The parsed {@link Word}, or `null` if the letters are not a valid
+ *   Vietnamese syllable
+ */
+export function parseWord(letters: string): Word | null {
+  const lower = letters.toLowerCase();
+  const word: Word = {};
+  let vowel = "";
+  let state: ParseState = "INITIAL_CONSONANT";
+  let i = 0;
+
+  while (i < letters.length && state !== "INVALID") {
+    switch (state) {
+      case "INITIAL_CONSONANT": {
+        // A leading simple vowel means there is no initial consonant.
+        if (SIMPLE_VOWELS.has(lower.charAt(i))) {
+          state = "VOWEL";
+          break;
+        }
+        const match = INITIAL_CONSONANTS.find((c) => lower.startsWith(c, i));
+        if (!match) {
+          state = "INVALID";
+          break;
+        }
+        word.initialConsonant = letters.slice(i, i + match.length);
+        i += match.length;
+        state = "VOWEL";
+        break;
+      }
+      case "VOWEL": {
+        const digraph = lower.slice(i, i + 2);
+        if (VOWEL_DIGRAPHS.includes(digraph)) {
+          // A doubled second character escapes the digraph into two literal
+          // letters (e.g. "ooo" → literal "oo"); keep the escape char with them.
+          if (
+            i + 2 < letters.length &&
+            lower.charAt(i + 2) === digraph.charAt(1)
+          ) {
+            vowel += letters.slice(i, i + 3);
+            i += 3;
+          } else {
+            vowel += letters.slice(i, i + 2);
+            i += 2;
+          }
+        } else if (SIMPLE_VOWELS.has(lower.charAt(i))) {
+          vowel += letters.charAt(i);
+          i += 1;
+        } else {
+          state = "FINAL_CONSONANT";
+        }
+        break;
+      }
+      case "FINAL_CONSONANT": {
+        // Everything left is the final consonant; validation decides if it fits.
+        word.finalConsonant = letters.slice(i);
+        i = letters.length;
+        break;
+      }
+    }
+  }
+
+  if (state === "INVALID") return null;
+
+  // "gi"/"qu" lend their trailing i/u to the cluster only when it is not already
+  // a complete nucleus on its own (e.g. "qu" + "yee" → "uyee", but "qu" + "a"
+  // stays "a" so the tone lands on the a, not the u).
+  const initial = (word.initialConsonant ?? "").toLowerCase();
+  if (
+    vowel !== "" &&
+    (initial === "gi" || initial === "qu") &&
+    !isCompleteNucleus(vowel)
+  ) {
+    vowel = (initial === "qu" ? "u" : "i") + vowel;
+  }
+  if (vowel !== "") word.vowel = vowel;
+
+  return validate(word) ? word : null;
+}
+
+/**
  * Stateful Telex decoder that buffers one word at a time.
  *
  * Call {@link write} once per letter, then {@link read} to get the decoded
