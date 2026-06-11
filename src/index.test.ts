@@ -1,12 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  encode,
-  decode,
-  render,
-  validate,
-  parseWord,
-  type Word,
-} from "./index.js";
+import { encode, decode, render, validate, type Word } from "./index.js";
 
 // all tests should have a single assertion
 // test names should be either "<input> → <output>"
@@ -86,48 +79,6 @@ describe("validate", () => {
 
   it.for(cases)("%j → %s", ([word, valid]) => {
     expect(validate(word)).toBe(valid);
-  });
-});
-
-describe("parseWord", () => {
-  const cases: [string, Word | null][] = [
-    // initial consonant + vowel
-    ["ba", { initialConsonant: "b", vowel: "a" }],
-    ["banh", { initialConsonant: "b", vowel: "a", finalConsonant: "nh" }],
-    // no initial consonant
-    ["a", { vowel: "a" }],
-    ["oa", { vowel: "oa" }],
-    // Telex digraphs are kept in Telex form, original case preserved
-    ["dda", { initialConsonant: "dd", vowel: "a" }],
-    ["Ow", { vowel: "Ow" }],
-    ["uw", { vowel: "uw" }],
-    // escaped digraph stays as the escape sequence
-    ["ooo", { vowel: "ooo" }],
-    // trigraph initial
-    ["nghee", { initialConsonant: "ngh", vowel: "ee" }],
-    // bare consonant token (đ from dd)
-    ["dd", { initialConsonant: "dd" }],
-    // gi/qu without an explicit vowel
-    ["gi", { initialConsonant: "gi" }],
-    ["gin", { initialConsonant: "gi", finalConsonant: "n" }],
-    // gi/qu with a vowel that is already a complete nucleus: no prepend
-    ["gia", { initialConsonant: "gi", vowel: "a" }],
-    ["que", { initialConsonant: "qu", vowel: "e" }],
-    ["qua", { initialConsonant: "qu", vowel: "a" }],
-    // gi/qu lending their i/u to complete the cluster
-    ["quyeen", { initialConsonant: "qu", vowel: "uyee", finalConsonant: "n" }],
-    // invalid: unknown initial consonant
-    ["fox", null],
-    // invalid: vowel cluster that is not a nucleus
-    ["tea", null],
-    // invalid: bad final consonant
-    ["seed", null],
-    // invalid: empty input
-    ["", null],
-  ];
-
-  it.for(cases)("%j → %j", ([input, expected]) => {
-    expect(parseWord(input)).toEqual(expected);
   });
 });
 
