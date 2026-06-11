@@ -35,7 +35,7 @@ Field | Holds | Telex Example | Decodes To
 `initialConsonant` | Onset | `dd`, `ng`, `qu` | đ, ng, qu
 `vowel` | Nucleus cluster | `uw`, `uaa` | ư, uâ
 `finalConsonant` | Coda | `c`, `ch`, `ng` | c, ch, ng
-`tone` | Tone letter `s`/`f`/`r`/`x`/`j` | `s` | sắc (´)
+`tone` | Tone letter `s`/`f`/`r`/`x`/`j` | `s` | dấu sắc
 
 On top of the `Word` parts, the context tracks the machine itself:
 
@@ -70,7 +70,7 @@ stateDiagram-v2
     INVALID --> INVALID: absorbs the rest of the token
 ```
 
-The progression only ever moves forward — onset → nucleus → coda → error — never back. When the token's letters run out, `finalize` is called on whatever state the machine has reached.
+The progression only ever moves forward — initial consonant → vowel → final consonant → error — never back. When the token's letters run out, `finalize` is called on whatever state the machine has reached.
 
 **Reprocessing.** A state that cannot place a letter does not throw it away; it hands the *same* letter to the next state's handler. So a single letter can drive more than one transition. In `gin`, the `n` arrives while the machine is still in `VOWEL` (the `i` of `gi` is the nucleus); `VOWEL` sees that `n` is a consonant and forwards it to `FINAL_CONSONANT`, which captures it. The net move is `VOWEL → FINAL_CONSONANT` on a single letter.
 
