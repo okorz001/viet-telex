@@ -639,6 +639,9 @@ describe("decode2", () => {
       ["ginf", "gìn"],
       ["quan", "quan"],
       ["quyeenr", "quyển"],
+      // duplicating the implicit nucleus is invalid → passthrough
+      ["gii", "gii"],
+      ["quu", "quu"],
     ])("%s → %s", ([input, output]) => {
       expect(decode2(input)).toBe(output);
     });

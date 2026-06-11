@@ -467,6 +467,11 @@ function parseInitialConsonant(
       state: "INITIAL_CONSONANT",
     };
   }
+  // For "gi"/"qu" the trailing i/u is the implicit nucleus. An explicit i (after
+  // "gi") or u (after "qu") would duplicate it, which is not a valid syllable.
+  if ((ic === "gi" && l === "i") || (ic === "qu" && l === "u")) {
+    return { ...ctx, state: "INVALID" };
+  }
   // A vowel ends the (possibly empty) initial; reprocess it in the VOWEL state.
   if (SIMPLE_VOWELS.has(l)) {
     return parseVowel({ ...ctx, state: "VOWEL" }, letter, strictTones);
