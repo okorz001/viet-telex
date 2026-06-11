@@ -389,9 +389,8 @@ export interface ParseContext extends Word {
  * {@link ParseContext} without mutating the original. Folding `parse` over a
  * word's letters from an empty context — state `INITIAL_CONSONANT`, empty
  * `input` — accumulates the {@link Word} parts, after which the context is
- * rendered to Unicode. This is the functional replacement for the stateful
- * `Decoder`: a fresh context takes the place of `clear()`, and rendering the
- * context takes the place of `read()`.
+ * rendered to Unicode. Each word begins from a fresh, empty context, and the
+ * finished context is rendered directly — there is no separate read step.
  *
  * Exported temporarily for unit testing during the decoder refactor; see
  * {@link Word}.
@@ -509,138 +508,37 @@ export function parseWord(letters: string): Word | null {
 }
 
 /**
- * Stateful Telex decoder that buffers one word at a time.
- *
- * Call {@link write} once per letter, then {@link read} to get the decoded
- * Vietnamese output. {@link clear} resets the buffer so the instance can be
- * reused for the next word.
- *
- * Exported temporarily for unit testing during the decoder refactor; it will
- * become internal once `decode` is rewritten to use it.
- *
- * @param options - Decoding options; see {@link DecodeOptions}
- */
-export class Decoder {
-  private readonly strictWords: boolean;
-  private readonly strictTones: boolean;
-  private buf = "";
-
-  constructor(options?: DecodeOptions) {
-    this.strictWords = options?.strictWords ?? false;
-    this.strictTones = options?.strictTones ?? false;
-  }
-
-  /** Append one letter to the internal buffer. */
-  write(letter: string): void {
-    this.buf += letter;
-  }
-
-  /** Decode the buffered word and return the result. Does not clear the buffer. */
-  read(): string {
-    const word = this.buf;
-
-    // Strict-words mode still uses the original pipeline; it will be folded into
-    // the state machine in a later step.
-    if (this.strictWords) return decodeWord(word, true, this.strictTones);
-
-    // Non-strict: a token that is not valid Vietnamese passes through unchanged.
-    if (!isVietnamese(word, this.strictTones)) return word;
-
-    const { raw, tone, escaped } = this.resolveTone(word);
-
-    // An escape (doubled tone or digraph letter) yields literal characters:
-    // decode digraphs but neither parse structurally nor apply a tone.
-    if (escaped) return decodeTelex(raw);
-
-    const parsed = parseWord(raw);
-    // parseWord rejects literal escape sequences (e.g. "Oww" → "ow"); fall back
-    // to a plain Telex decode when the residue is not a clean syllable.
-    if (!parsed) return decodeTelex(raw);
-
-    // "z" is the neutral tone — it clears any mark, so leave tone unset.
-    if (tone !== null && tone !== "z") parsed.tone = tone;
-    return render(parsed);
-  }
-
-  // Resolve the word's tone in two tiers and return the tone-stripped residue.
-  // Tier 1 scans the end of the word (last non-escaped tone wins; a doubled tone
-  // letter is an escape). Tier 2 (lenient tones only) scans mid-word for a marker
-  // whose removal leaves a valid syllable (e.g. "mafu" → "màu").
-  private resolveTone(word: string): {
-    raw: string;
-    tone: string | null;
-    escaped: boolean;
-  } {
-    let tone: string | null = null;
-    let raw = word;
-    let escaped = false;
-
-    while (raw.length >= 1) {
-      const last = raw.charAt(raw.length - 1).toLowerCase();
-      if (!TONES.has(last)) break;
-      if (
-        raw.length >= 2 &&
-        raw.charAt(raw.length - 2).toLowerCase() === last
-      ) {
-        raw = raw.slice(0, -1);
-        tone = null;
-        escaped = true;
-        break;
-      }
-      if (tone === null) tone = last;
-      raw = raw.slice(0, -1);
-    }
-
-    if (!this.strictTones && tone === null && !escaped) {
-      let midTone: string | null = null;
-      let midToneIdx = -1;
-      let hadVowel = false;
-      for (let k = 0; k < raw.length; k++) {
-        const ch = raw.charAt(k).toLowerCase();
-        if (SIMPLE_VOWELS.has(ch)) {
-          hadVowel = true;
-        } else if (hadVowel && TONE_MARKERS.has(ch)) {
-          const candidate = raw.slice(0, k) + raw.slice(k + 1);
-          if (isVietnamese(candidate)) {
-            midTone = ch;
-            midToneIdx = k;
-          }
-        }
-      }
-      if (midTone !== null) {
-        tone = midTone;
-        raw = raw.slice(0, midToneIdx) + raw.slice(midToneIdx + 1);
-      }
-    }
-
-    return { raw, tone, escaped };
-  }
-
-  /** Reset the buffer for the next word. */
-  clear(): void {
-    this.buf = "";
-  }
-}
-
-/**
- * Temporary replacement for {@link decode} that routes through {@link Decoder}.
- * Will replace `decode` once `Decoder.read()` is fully implemented.
+ * Temporary replacement for {@link decode} that folds {@link parse} over the
+ * letters of each word, then renders the resulting context. Will replace
+ * `decode` once the {@link parse} state machine is complete.
  *
  * @param text - ASCII text using Telex encoding
  * @param options - Optional decoding options; see {@link DecodeOptions}
  * @returns Vietnamese Unicode text in NFC form
  */
 export function decode2(text: string, options?: DecodeOptions): string {
-  const dec = new Decoder(options);
   const tokens = text.split(/([^a-zA-Z]+)/);
   return tokens
     .map((token) => {
       if (!token || /[^a-zA-Z]/.test(token)) return token;
-      dec.clear();
-      for (const ch of token) dec.write(ch);
-      return dec.read();
+      let ctx: ParseContext = { state: "INITIAL_CONSONANT", input: "" };
+      for (const ch of token) ctx = parse(ctx, ch);
+      return finalize(ctx, options);
     })
     .join("");
+}
+
+// Renders a fully-parsed context to output text. strictWords still delegates to
+// the original pipeline (to be folded into the state machine later). Otherwise an
+// INVALID parse, or a structurally invalid non-escaped word, passes through as
+// the raw input; a valid or escaped word is rendered from its Word parts.
+function finalize(ctx: ParseContext, options?: DecodeOptions): string {
+  const strictWords = options?.strictWords ?? false;
+  const strictTones = options?.strictTones ?? false;
+  if (strictWords) return decodeWord(ctx.input, true, strictTones);
+  if (ctx.state === "INVALID") return ctx.input;
+  if (!ctx.escaped && !validate(ctx)) return ctx.input;
+  return render(ctx);
 }
 
 function isVietnamese(word: string, strictTones = false): boolean {
