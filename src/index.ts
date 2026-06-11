@@ -428,20 +428,13 @@ export interface ParseContext extends Word {
  *
  * @param ctx - The parse context so far; pass `{}` to begin a new word
  * @param letter - The next input letter to consume
- * @param strictTones - When `true`, a tone letter is honored only at the end of the
- *   word: once a tone has been set, any further non-tone letter drops the token to
- *   `INVALID`, so a mid-word tone yields a passthrough. Defaults to `false`.
- * @param strictWords - When `true`, characters that would otherwise transition to
- *   `INVALID` (other than escape sequences and structural impossibilities) are
- *   silently discarded instead, keeping the parse in its current state. Defaults
- *   to `false`.
+ * @param options - Optional decoding options; see {@link DecodeOptions}
  * @returns A new {@link ParseContext} reflecting `letter` having been consumed
  */
 export function parse(
   ctx: ParseContext,
   letter: string,
-  strictTones = false,
-  strictWords = false,
+  options?: DecodeOptions,
 ): ParseContext {
   const state = ctx.state ?? "INITIAL_CONSONANT";
   const input = (ctx.input ?? "") + letter;
@@ -454,10 +447,9 @@ export function parse(
     return { ...base, state: "INVALID", decoded };
   }
   if (state === "INITIAL_CONSONANT")
-    return parseInitialConsonant(base, letter, strictTones, strictWords);
-  if (state === "VOWEL")
-    return parseVowel(base, letter, strictTones, strictWords);
-  return parseFinalConsonant(base, letter, strictTones, strictWords);
+    return parseInitialConsonant(base, letter, options);
+  if (state === "VOWEL") return parseVowel(base, letter, options);
+  return parseFinalConsonant(base, letter, options);
 }
 
 // INITIAL_CONSONANT state: build up the leading consonant cluster, then hand off
@@ -467,9 +459,9 @@ export function parse(
 function parseInitialConsonant(
   ctx: ParseContext,
   letter: string,
-  strictTones: boolean,
-  strictWords: boolean,
+  options?: DecodeOptions,
 ): ParseContext {
+  const strictWords = options?.strictWords ?? false;
   const ic = (ctx.initialConsonant ?? "").toLowerCase();
   const l = letter.toLowerCase();
   // Digraph escape: "dd" + "d" → literal "dd". This is no longer a valid syllable, so
@@ -503,23 +495,13 @@ function parseInitialConsonant(
   }
   // A vowel ends the (possibly empty) initial; reprocess it in the VOWEL state.
   if (SIMPLE_VOWELS.has(l)) {
-    return parseVowel(
-      { ...ctx, state: "VOWEL" },
-      letter,
-      strictTones,
-      strictWords,
-    );
+    return parseVowel({ ...ctx, state: "VOWEL" }, letter, options);
   }
   // For "gi"/"qu" the trailing i/u is itself the nucleus, so a directly following
   // tone or final consonant (no further vowel) is parsed as if the vowel were
   // already complete: "gif" → gì, "gin" → gin, "ginf" → gìn.
   if (ic === "gi" || ic === "qu") {
-    return parseVowel(
-      { ...ctx, state: "VOWEL" },
-      letter,
-      strictTones,
-      strictWords,
-    );
+    return parseVowel({ ...ctx, state: "VOWEL" }, letter, options);
   }
   // Any other letter cannot begin or extend a Vietnamese syllable here.
   if (strictWords) return ctx;
@@ -532,9 +514,10 @@ function parseInitialConsonant(
 function parseVowel(
   ctx: ParseContext,
   letter: string,
-  strictTones: boolean,
-  strictWords: boolean,
+  options?: DecodeOptions,
 ): ParseContext {
+  const strictTones = options?.strictTones ?? false;
+  const strictWords = options?.strictWords ?? false;
   const vowel = ctx.vowel ?? "";
   const lv = vowel.toLowerCase();
   const l = letter.toLowerCase();
@@ -605,8 +588,7 @@ function parseVowel(
   return parseFinalConsonant(
     { ...ctx, state: "FINAL_CONSONANT" },
     letter,
-    strictTones,
-    strictWords,
+    options,
   );
 }
 
@@ -619,9 +601,10 @@ function parseVowel(
 function parseFinalConsonant(
   ctx: ParseContext,
   letter: string,
-  strictTones: boolean,
-  strictWords: boolean,
+  options?: DecodeOptions,
 ): ParseContext {
+  const strictTones = options?.strictTones ?? false;
+  const strictWords = options?.strictWords ?? false;
   const final = ctx.finalConsonant ?? "";
   const l = letter.toLowerCase();
 
@@ -678,14 +661,12 @@ function parseFinalConsonant(
  * @returns Vietnamese Unicode text in NFC form
  */
 export function decode2(text: string, options?: DecodeOptions): string {
-  const strictTones = options?.strictTones ?? false;
-  const strictWords = options?.strictWords ?? false;
   const tokens = text.split(/([^a-zA-Z]+)/);
   return tokens
     .map((token) => {
       if (!token || /[^a-zA-Z]/.test(token)) return token;
       let ctx: ParseContext = {};
-      for (const ch of token) ctx = parse(ctx, ch, strictTones, strictWords);
+      for (const ch of token) ctx = parse(ctx, ch, options);
       return finalize(ctx);
     })
     .join("");
