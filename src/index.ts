@@ -651,27 +651,6 @@ function parseFinalConsonant(
   return { ...ctx, state: "INVALID" };
 }
 
-/**
- * Temporary replacement for {@link decode} that folds {@link parse} over the
- * letters of each word, then renders the resulting context. Will replace
- * `decode` once the {@link parse} state machine is complete.
- *
- * @param text - ASCII text using Telex encoding
- * @param options - Optional decoding options; see {@link DecodeOptions}
- * @returns Vietnamese Unicode text in NFC form
- */
-export function decode2(text: string, options?: DecodeOptions): string {
-  const tokens = text.split(/([^a-zA-Z]+)/);
-  return tokens
-    .map((token) => {
-      if (!token || /[^a-zA-Z]/.test(token)) return token;
-      let ctx: ParseContext = {};
-      for (const ch of token) ctx = parse(ctx, ch, options);
-      return finalize(ctx);
-    })
-    .join("");
-}
-
 // Renders a fully-parsed context to output text. An escaped token returns its
 // pre-resolved `decoded` literal; an INVALID parse, or a structurally invalid
 // word, passes through as the raw input; a valid word is rendered from its Word parts.
@@ -747,7 +726,15 @@ export interface DecodeOptions {
  * @returns Vietnamese Unicode text in NFC form
  */
 export function decode(text: string, options?: DecodeOptions): string {
-  return decode2(text, options);
+  const tokens = text.split(/([^a-zA-Z]+)/);
+  return tokens
+    .map((token) => {
+      if (!token || /[^a-zA-Z]/.test(token)) return token;
+      let ctx: ParseContext = {};
+      for (const ch of token) ctx = parse(ctx, ch, options);
+      return finalize(ctx);
+    })
+    .join("");
 }
 
 /**
