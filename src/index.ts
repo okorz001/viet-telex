@@ -411,9 +411,55 @@ export interface ParseContext extends Word {
 export function parse(ctx: ParseContext, letter: string): ParseContext {
   const state = ctx.state ?? "INITIAL_CONSONANT";
   const input = (ctx.input ?? "") + letter;
-  // TODO: dispatch on state (INITIAL_CONSONANT → VOWEL → FINAL_CONSONANT, with
-  // INVALID terminal). This stub only accumulates the raw input for now.
-  return { ...ctx, state, input };
+  const base: ParseContext = { ...ctx, input };
+  if (state === "INVALID") return { ...base, state: "INVALID" };
+  if (state === "INITIAL_CONSONANT") return parseInitialConsonant(base, letter);
+  if (state === "VOWEL") return parseVowel(base, letter);
+  // FINAL_CONSONANT stub (step 3)
+  return { ...base, state: "FINAL_CONSONANT" };
+}
+
+// INITIAL_CONSONANT state: build up the leading consonant cluster, then hand off
+// to the VOWEL state once a vowel arrives. The consonant is stored in its original
+// case (so render can reproduce "Ngo", "Phở", …); only a lowercase copy is used to
+// match against the (lowercase) INITIAL_CONSONANTS table.
+function parseInitialConsonant(
+  ctx: ParseContext,
+  letter: string,
+): ParseContext {
+  const ic = (ctx.initialConsonant ?? "").toLowerCase();
+  const l = letter.toLowerCase();
+  // Digraph escape: "dd" + "d" → literal "dd" (decodeTelex("ddd") = "dd").
+  if (ic === "dd" && l === "d") {
+    return {
+      ...ctx,
+      initialConsonant: (ctx.initialConsonant ?? "") + letter,
+      escaped: true,
+      state: "INITIAL_CONSONANT",
+    };
+  }
+  // Greedily extend while the accumulated prefix is a prefix of some IC entry.
+  // Every prefix built this way (n→ng→ngh, g→gi, q→qu, d→dd) is itself a valid
+  // INITIAL_CONSONANTS entry, so a non-empty initial is always a complete one.
+  if (INITIAL_CONSONANTS.some((c) => c.startsWith(ic + l))) {
+    return {
+      ...ctx,
+      initialConsonant: (ctx.initialConsonant ?? "") + letter,
+      state: "INITIAL_CONSONANT",
+    };
+  }
+  // A vowel ends the (possibly empty) initial; reprocess it in the VOWEL state.
+  if (SIMPLE_VOWELS.has(l)) {
+    return parseVowel({ ...ctx, state: "VOWEL" }, letter);
+  }
+  // Any other letter cannot begin or extend a Vietnamese syllable here.
+  return { ...ctx, state: "INVALID" };
+}
+
+// VOWEL state — step 2 stub: accumulate letters into the vowel cluster verbatim.
+// Tone handling, digraph escapes, and the hand-off to FINAL_CONSONANT land next.
+function parseVowel(ctx: ParseContext, letter: string): ParseContext {
+  return { ...ctx, vowel: (ctx.vowel ?? "") + letter, state: "VOWEL" };
 }
 
 /**

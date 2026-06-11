@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { encode, decode, render, validate, type Word } from "./index.js";
+import {
+  encode,
+  decode,
+  decode2,
+  parse,
+  render,
+  validate,
+  type Word,
+  type ParseContext,
+} from "./index.js";
 
 // all tests should have a single assertion
 // test names should be either "<input> → <output>"
@@ -79,6 +88,60 @@ describe("validate", () => {
 
   it.for(cases)("%j → %s", ([word, valid]) => {
     expect(validate(word)).toBe(valid);
+  });
+});
+
+describe("parse", () => {
+  // Fold parse over a string's letters, starting from a fresh empty context.
+  const fold = (s: string): ParseContext =>
+    [...s].reduce((ctx, ch) => parse(ctx, ch), {} as ParseContext);
+
+  describe("INITIAL_CONSONANT state", () => {
+    const cases: [string, ParseContext][] = [
+      // greedily extend the consonant, then a vowel hands off to VOWEL
+      [
+        "nga",
+        { initialConsonant: "ng", vowel: "a", state: "VOWEL", input: "nga" },
+      ],
+      // a longer consonant prefix keeps the parser in INITIAL_CONSONANT
+      [
+        "ngh",
+        { initialConsonant: "ngh", state: "INITIAL_CONSONANT", input: "ngh" },
+      ],
+      // case is preserved on the stored consonant (so render can reproduce it)
+      [
+        "Ngo",
+        { initialConsonant: "Ng", vowel: "o", state: "VOWEL", input: "Ngo" },
+      ],
+      // bare đ from dd, still mid-consonant
+      [
+        "dd",
+        { initialConsonant: "dd", state: "INITIAL_CONSONANT", input: "dd" },
+      ],
+      // dd + d is a digraph escape → literal, flagged escaped
+      [
+        "ddd",
+        {
+          initialConsonant: "ddd",
+          escaped: true,
+          state: "INITIAL_CONSONANT",
+          input: "ddd",
+        },
+      ],
+      // qu ends in a vowel letter; the next vowel still hands off to VOWEL
+      [
+        "qua",
+        { initialConsonant: "qu", vowel: "a", state: "VOWEL", input: "qua" },
+      ],
+      // no initial consonant: a leading vowel goes straight to VOWEL
+      ["a", { vowel: "a", state: "VOWEL", input: "a" }],
+      // a letter that neither extends a consonant nor is a vowel is INVALID
+      ["fo", { state: "INVALID", input: "fo" }],
+    ];
+
+    it.for(cases)("%s → %j", ([input, expected]) => {
+      expect(fold(input)).toEqual(expected);
+    });
   });
 });
 
@@ -349,6 +412,85 @@ describe("decode", () => {
         ["thicsh", "thicsh"],
       ])("%s → %s", ([input, output]) => {
         expect(decode(input, { strictTones: true })).toBe(output);
+      });
+    });
+  });
+});
+
+// decode2 ≡ decode, rebuilt one parse-state at a time. With INITIAL_CONSONANT
+// implemented and VOWEL still a verbatim-append stub, these are the cases that
+// already resolve correctly: ones decided entirely in INITIAL_CONSONANT state, or
+// whose raw vowel append happens to validate (or correctly fails to). Tone marks,
+// vowel-digraph escapes, and compound vowels arrive with the VOWEL state.
+describe("decode2", () => {
+  describe("extended Latin digraphs", () => {
+    it.for([
+      ["aa", "â"],
+      ["aw", "ă"],
+      ["dd", "đ"],
+      ["ee", "ê"],
+      ["oo", "ô"],
+      ["ow", "ơ"],
+      ["uw", "ư"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
+  describe("digraph case handling", () => {
+    it.for([
+      ["Ow", "Ơ"],
+      ["oW", "ơ"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
+  describe("digraph escape sequences", () => {
+    it.for([["ddd", "dd"]])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
+  describe("initial consonants are not tones", () => {
+    it.for([
+      ["sa", "sa"],
+      ["ra", "ra"],
+      ["xa", "xa"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
+  describe("non-Vietnamese", () => {
+    describe("invalid initial consonant", () => {
+      it.for([
+        ["fox", "fox"],
+        ["jar", "jar"],
+        ["war", "war"],
+        ["zero", "zero"],
+        ["show", "show"],
+      ])("%s → %s", ([input, output]) => {
+        expect(decode2(input)).toBe(output);
+      });
+    });
+
+    describe("invalid vowel", () => {
+      it.for([
+        ["teas", "teas"],
+        ["treat", "treat"],
+        ["treats", "treats"],
+      ])("%s → %s", ([input, output]) => {
+        expect(decode2(input)).toBe(output);
+      });
+    });
+
+    describe("invalid final consonant", () => {
+      it.for([
+        ["odd", "odd"],
+        ["seed", "seed"],
+      ])("%s → %s", ([input, output]) => {
+        expect(decode2(input)).toBe(output);
       });
     });
   });
