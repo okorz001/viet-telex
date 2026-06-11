@@ -453,7 +453,7 @@ describe("decode", () => {
           ["fox", "õ"],
           ["jar", "ả"],
           ["war", "ả"],
-          ["zero", "ẻ"],
+          ["zero", "ẻo"],
           ["show", "sơ"],
         ])("%s → %s", ([input, output]) => {
           expect(decode(input, { strictWords: true })).toBe(output);

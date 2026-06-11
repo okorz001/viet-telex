@@ -58,12 +58,6 @@ const VOWEL_DIGRAPHS = ["aw", "aa", "ee", "oo", "ow", "uw"];
 const SIMPLE_VOWELS = new Set(["a", "e", "i", "o", "u", "y"]);
 const FINAL_CONSONANTS = ["ch", "ng", "nh", "c", "m", "n", "p", "t"];
 const TONE_MARKERS = new Set(["s", "f", "r", "x", "j", "z"]);
-// INITIAL_CONSONANTS with the Telex digraph "dd" replaced by its decoded form "đ",
-// for matching against already-decoded output in strict-words mode.
-const DECODED_INITIAL_CONSONANTS = INITIAL_CONSONANTS.map((c) =>
-  c === "dd" ? "đ" : c,
-);
-
 // Maps vowel cluster (lowercase) to index of nucleus vowel within that cluster.
 // Unlisted clusters fall back to: last vowel before any trailing consonant.
 // Entries are ordered by nucleus index, then Vietnamese alphabetical order
@@ -111,8 +105,34 @@ const NUCLEI: Map<string, number> = new Map([
 
 const VOWELS = new Set("aăâeêioôơuưy");
 
-// ASCII letters present in the Vietnamese 29-letter alphabet (excludes f, j, w, z)
-const VIETNAMESE_LETTERS = new Set("abcdeghiklmnopqrstuvxy");
+// Maps each extended Vietnamese vowel letter to its two-character Telex digraph.
+const VOWEL_TO_TELEX: Map<string, string> = new Map([
+  ["ă", "aw"],
+  ["â", "aa"],
+  ["ê", "ee"],
+  ["ô", "oo"],
+  ["ơ", "ow"],
+  ["ư", "uw"],
+]);
+
+// All Telex vowel-cluster strings that are a prefix of some valid Vietnamese
+// nucleus encoding. Used in parseVowel to reject infeasible vowel extensions
+// early (before the extension could ever reach a valid nucleus).
+//
+// Derived by converting every entry in VOWELS and NUCLEI to its Telex form and
+// collecting all prefixes. For example "iê" → "iee" contributes {"i","ie","iee"},
+// so "ie" is marked feasible even though it is not yet a valid cluster on its own.
+const VALID_TELEX_VOWEL_PREFIXES: Set<string> = (() => {
+  const toTelex = (s: string) =>
+    [...s].map((c) => VOWEL_TO_TELEX.get(c) ?? c).join("");
+  const prefixes = new Set<string>();
+  const addPrefixes = (telex: string) => {
+    for (let i = 1; i <= telex.length; i++) prefixes.add(telex.slice(0, i));
+  };
+  for (const v of VOWELS) addPrefixes(toTelex(v));
+  for (const [nucleus] of NUCLEI) addPrefixes(toTelex(nucleus));
+  return prefixes;
+})();
 
 function isVowel(ch: string): boolean {
   return VOWELS.has(ch.toLowerCase());
@@ -411,12 +431,17 @@ export interface ParseContext extends Word {
  * @param strictTones - When `true`, a tone letter is honored only at the end of the
  *   word: once a tone has been set, any further non-tone letter drops the token to
  *   `INVALID`, so a mid-word tone yields a passthrough. Defaults to `false`.
+ * @param strictWords - When `true`, characters that would otherwise transition to
+ *   `INVALID` (other than escape sequences and structural impossibilities) are
+ *   silently discarded instead, keeping the parse in its current state. Defaults
+ *   to `false`.
  * @returns A new {@link ParseContext} reflecting `letter` having been consumed
  */
 export function parse(
   ctx: ParseContext,
   letter: string,
   strictTones = false,
+  strictWords = false,
 ): ParseContext {
   const state = ctx.state ?? "INITIAL_CONSONANT";
   const input = (ctx.input ?? "") + letter;
@@ -429,9 +454,10 @@ export function parse(
     return { ...base, state: "INVALID", decoded };
   }
   if (state === "INITIAL_CONSONANT")
-    return parseInitialConsonant(base, letter, strictTones);
-  if (state === "VOWEL") return parseVowel(base, letter, strictTones);
-  return parseFinalConsonant(base, letter, strictTones);
+    return parseInitialConsonant(base, letter, strictTones, strictWords);
+  if (state === "VOWEL")
+    return parseVowel(base, letter, strictTones, strictWords);
+  return parseFinalConsonant(base, letter, strictTones, strictWords);
 }
 
 // INITIAL_CONSONANT state: build up the leading consonant cluster, then hand off
@@ -442,14 +468,17 @@ function parseInitialConsonant(
   ctx: ParseContext,
   letter: string,
   strictTones: boolean,
+  strictWords: boolean,
 ): ParseContext {
   const ic = (ctx.initialConsonant ?? "").toLowerCase();
   const l = letter.toLowerCase();
   // Digraph escape: "dd" + "d" → literal "dd". This is no longer a valid syllable, so
   // resolve the literal (decodeTelex collapses the doubled "d"), drop the Word part, and
   // fall to INVALID. ctx.input already includes this letter, so it is the full escape
-  // sequence (e.g. "ddd" → "dd").
+  // sequence (e.g. "ddd" → "dd"). In strictWords mode the escape char is discarded
+  // instead, leaving IC="dd" which renders as "đ".
   if (ic === "dd" && l === "d") {
+    if (strictWords) return ctx;
     return {
       ...ctx,
       initialConsonant: undefined,
@@ -474,15 +503,26 @@ function parseInitialConsonant(
   }
   // A vowel ends the (possibly empty) initial; reprocess it in the VOWEL state.
   if (SIMPLE_VOWELS.has(l)) {
-    return parseVowel({ ...ctx, state: "VOWEL" }, letter, strictTones);
+    return parseVowel(
+      { ...ctx, state: "VOWEL" },
+      letter,
+      strictTones,
+      strictWords,
+    );
   }
   // For "gi"/"qu" the trailing i/u is itself the nucleus, so a directly following
   // tone or final consonant (no further vowel) is parsed as if the vowel were
   // already complete: "gif" → gì, "gin" → gin, "ginf" → gìn.
   if (ic === "gi" || ic === "qu") {
-    return parseVowel({ ...ctx, state: "VOWEL" }, letter, strictTones);
+    return parseVowel(
+      { ...ctx, state: "VOWEL" },
+      letter,
+      strictTones,
+      strictWords,
+    );
   }
   // Any other letter cannot begin or extend a Vietnamese syllable here.
+  if (strictWords) return ctx;
   return { ...ctx, state: "INVALID" };
 }
 
@@ -493,6 +533,7 @@ function parseVowel(
   ctx: ParseContext,
   letter: string,
   strictTones: boolean,
+  strictWords: boolean,
 ): ParseContext {
   const vowel = ctx.vowel ?? "";
   const lv = vowel.toLowerCase();
@@ -528,12 +569,14 @@ function parseVowel(
   // Vowel digraph escape: the cluster ends in a Telex digraph and this letter doubles
   // its second character (e.g. "oo" + "o", "aa" + "a"). The literal pair is a valid
   // vowel only for "oo" (a nucleus, as in "xoong"); the others ("aa", "aw", "ee",
-  // "ow", "uw") are non-Vietnamese and pass through literally.
+  // "ow", "uw") are non-Vietnamese and pass through literally. In strictWords mode the
+  // escape character is discarded instead so the digraph decodes normally ("aaa" → "â").
   if (VOWEL_DIGRAPHS.includes(lv.slice(-2)) && l === lv.slice(-1)) {
     const literal = decodeTelex(vowel + letter);
     if (NUCLEI.has(literal.toLowerCase())) {
       return { ...ctx, vowel: vowel + letter, state: "VOWEL" };
     }
+    if (strictWords) return ctx;
     return {
       ...ctx,
       vowel: undefined,
@@ -542,11 +585,19 @@ function parseVowel(
     };
   }
 
-  // A vowel letter, or a "w" completing "aw"/"ow"/"uw", extends the cluster.
+  // A vowel letter, or a "w" completing "aw"/"ow"/"uw", extends the cluster — but only
+  // if the result is a feasible Telex prefix (i.e. could eventually decode to a valid
+  // Vietnamese nucleus). Infeasible extensions ("ea", "aaw", …) are dropped here rather
+  // than propagating to a validate() failure at finalize time.
   if (
     SIMPLE_VOWELS.has(l) ||
     (l === "w" && ["a", "o", "u"].includes(lv.slice(-1)))
   ) {
+    const newVowelLower = lv + l;
+    if (!VALID_TELEX_VOWEL_PREFIXES.has(newVowelLower)) {
+      if (strictWords) return ctx;
+      return { ...ctx, state: "INVALID" };
+    }
     return { ...ctx, vowel: vowel + letter, state: "VOWEL" };
   }
 
@@ -555,6 +606,7 @@ function parseVowel(
     { ...ctx, state: "FINAL_CONSONANT" },
     letter,
     strictTones,
+    strictWords,
   );
 }
 
@@ -568,6 +620,7 @@ function parseFinalConsonant(
   ctx: ParseContext,
   letter: string,
   strictTones: boolean,
+  strictWords: boolean,
 ): ParseContext {
   const final = ctx.finalConsonant ?? "";
   const l = letter.toLowerCase();
@@ -611,6 +664,7 @@ function parseFinalConsonant(
   }
 
   // Anything else cannot continue the syllable.
+  if (strictWords) return ctx;
   return { ...ctx, state: "INVALID" };
 }
 
@@ -625,97 +679,27 @@ function parseFinalConsonant(
  */
 export function decode2(text: string, options?: DecodeOptions): string {
   const strictTones = options?.strictTones ?? false;
+  const strictWords = options?.strictWords ?? false;
   const tokens = text.split(/([^a-zA-Z]+)/);
   return tokens
     .map((token) => {
       if (!token || /[^a-zA-Z]/.test(token)) return token;
       let ctx: ParseContext = {};
-      for (const ch of token) ctx = parse(ctx, ch, strictTones);
-      return finalize(ctx, options);
+      for (const ch of token) ctx = parse(ctx, ch, strictTones, strictWords);
+      return finalize(ctx);
     })
     .join("");
 }
 
-// Renders a fully-parsed context to output text. strictWords still delegates to
-// the original pipeline (to be folded into the state machine later). Otherwise an
-// escaped token returns its pre-resolved `decoded` literal; an INVALID parse, or a
-// structurally invalid word, passes through as the raw input; a valid word is
-// rendered from its Word parts.
-function finalize(ctx: ParseContext, options?: DecodeOptions): string {
-  const strictWords = options?.strictWords ?? false;
-  const strictTones = options?.strictTones ?? false;
+// Renders a fully-parsed context to output text. An escaped token returns its
+// pre-resolved `decoded` literal; an INVALID parse, or a structurally invalid
+// word, passes through as the raw input; a valid word is rendered from its Word parts.
+function finalize(ctx: ParseContext): string {
   const input = ctx.input ?? "";
-  if (strictWords) return decodeWord(input, true, strictTones);
   if (ctx.decoded !== undefined) return ctx.decoded;
   if (ctx.state === "INVALID") return input;
   if (!validate(ctx)) return input;
   return render(ctx);
-}
-
-function isVietnamese(word: string, strictTones = false): boolean {
-  const s = word.toLowerCase();
-
-  // Digraph escape sequences are always decoded regardless of syllable structure.
-  for (let i = 0; i + 2 < s.length; i++) {
-    if (DIGRAPHS.has(s.slice(i, i + 2)) && s.charAt(i + 2) === s.charAt(i + 1))
-      return true;
-  }
-
-  let pos = 0;
-  // Greedy vowel cluster: try VOWEL_DIGRAPHS first at each position, then
-  // simple vowels. This supports diphthongs and triphthongs (e.g. Nguyeenx).
-  let hadVowel = false;
-  let vCluster = "";
-  let initialConsonant = "";
-
-  if (!SIMPLE_VOWELS.has(s.charAt(0))) {
-    const match = INITIAL_CONSONANTS.find((c) => s.startsWith(c));
-    if (!match) return false;
-    pos = match.length;
-    if (pos === s.length) return true; // consonant-only word (dd → đ)
-    // "gi" and "qu" end in a vowel letter; that letter counts toward hadVowel
-    // so a bare tone marker (e.g. "gif") is recognised as valid Vietnamese.
-    if (match === "gi" || match === "qu") {
-      hadVowel = true;
-      initialConsonant = match;
-    }
-  }
-  while (pos < s.length) {
-    const vDg = VOWEL_DIGRAPHS.find((d) => s.startsWith(d, pos));
-    if (vDg) {
-      pos += vDg.length;
-      hadVowel = true;
-      vCluster += DIGRAPHS.get(vDg)!;
-    } else if (SIMPLE_VOWELS.has(s.charAt(pos))) {
-      vCluster += s.charAt(pos);
-      pos += 1;
-      hadVowel = true;
-    } else if (!strictTones && hadVowel && TONE_MARKERS.has(s.charAt(pos))) {
-      pos += 1;
-    } else {
-      break;
-    }
-  }
-  if (!hadVowel) return false;
-  if (vCluster.length > 1 && !NUCLEI.has(vCluster)) {
-    // For "gi"/"qu" initial consonants, the terminal vowel letter ('i'/'u')
-    // may be part of the vowel cluster. First assume it is not (a regular
-    // consonant); only if that check fails, try prepending it.
-    const prefix =
-      initialConsonant === "qu" ? "u" : initialConsonant === "gi" ? "i" : "";
-    if (!prefix || !NUCLEI.has(prefix + vCluster)) return false;
-  }
-
-  // Strip tone markers from the remaining suffix, then verify it is a valid
-  // final consonant (or empty for an open syllable). This allows tone markers
-  // to appear anywhere within the final-consonant region (e.g. "thicsh" where
-  // 's' sits between 'c' and 'h' of the "ch" digraph).
-  let suffix = "";
-  for (let k = pos; k < s.length; k++) {
-    const c = s.charAt(k);
-    if (!TONE_MARKERS.has(c)) suffix += c;
-  }
-  return suffix === "" || FINAL_CONSONANTS.includes(suffix);
 }
 
 /**
@@ -783,246 +767,6 @@ export interface DecodeOptions {
  */
 export function decode(text: string, options?: DecodeOptions): string {
   return decode2(text, options);
-}
-
-// After decoding, trim any excess pre-vowel consonants that do not form a
-// valid Vietnamese initial consonant. The longest matching entry in
-// DECODED_INITIAL_CONSONANTS is kept; everything after it up to the first vowel
-// is discarded (e.g. "shơ" → "sơ" because "sh" is not a valid initial consonant
-// but "s" is).
-function trimInitialConsonants(word: string): string {
-  const lower = word.toLowerCase();
-  let vowelStart = 0;
-  while (vowelStart < lower.length && !isVowel(lower.charAt(vowelStart))) {
-    vowelStart++;
-  }
-  if (vowelStart === 0) return word; // starts with a vowel — nothing to trim
-  const prefix = lower.slice(0, vowelStart);
-  const match = DECODED_INITIAL_CONSONANTS.find((c) => prefix.startsWith(c));
-  if (!match || match.length === prefix.length) return word; // exact match or no match
-  return word.slice(0, match.length) + word.slice(vowelStart);
-}
-
-// After decoding, trim the longest vowel cluster down to a valid Vietnamese
-// cluster. Characters are removed from the right end of the cluster until it
-// is either a single vowel or present in NUCLEI (e.g. "ea" → "e").
-function trimVowelCluster(word: string): string {
-  const lower = word.toLowerCase();
-  let clusterStart = -1;
-  let clusterEnd = -1;
-  let i = 0;
-  while (i < lower.length) {
-    if (isVowel(lower.charAt(i))) {
-      const start = i;
-      while (i < lower.length && isVowel(lower.charAt(i))) i++;
-      if (i - start > clusterEnd - clusterStart) {
-        clusterStart = start;
-        clusterEnd = i;
-      }
-    } else {
-      i++;
-    }
-  }
-  if (clusterStart === -1) return word;
-  const originalEnd = clusterEnd;
-  while (
-    clusterEnd - clusterStart > 1 &&
-    !NUCLEI.has(lower.slice(clusterStart, clusterEnd))
-  ) {
-    clusterEnd--;
-  }
-  if (clusterEnd === originalEnd) return word;
-  return word.slice(0, clusterEnd) + word.slice(originalEnd);
-}
-
-// After decoding, trim any trailing characters that do not form a valid
-// Vietnamese syllable-final consonant sequence. Operates on undecorated
-// (pre-tone) text so that isVowel matches correctly.
-// Returns the trimmed word and any tone marker found while trimming.
-function trimFinalConsonants(word: string): {
-  word: string;
-  tone: string | null;
-} {
-  const lower = word.toLowerCase();
-  let clusterStart = -1;
-  let clusterEnd = -1;
-  let i = 0;
-  while (i < lower.length) {
-    if (isVowel(lower.charAt(i))) {
-      const start = i;
-      while (i < lower.length && isVowel(lower.charAt(i))) i++;
-      if (i - start > clusterEnd - clusterStart) {
-        clusterStart = start;
-        clusterEnd = i;
-      }
-    } else {
-      i++;
-    }
-  }
-  if (clusterStart === -1) return { word, tone: null }; // no vowel — nothing to trim
-  let suffix = word.slice(clusterEnd);
-  let embeddedTone: string | null = null;
-  while (suffix !== "" && !FINAL_CONSONANTS.includes(suffix.toLowerCase())) {
-    const lastChar = suffix.charAt(suffix.length - 1).toLowerCase();
-    if (embeddedTone === null && TONES.has(lastChar)) embeddedTone = lastChar;
-    suffix = suffix.slice(0, -1);
-  }
-  return { word: word.slice(0, clusterEnd) + suffix, tone: embeddedTone };
-}
-
-function decodeWord(
-  word: string,
-  strictWords: boolean,
-  strictTones = false,
-): string {
-  if (!strictWords && !isVietnamese(word, strictTones)) return word;
-  // Detect tone letter at end (may be escaped by doubling)
-  let tone: string | null = null;
-  let raw = word;
-
-  // Scan from end for tone letters. Last tone wins; z clears.
-  // Keep stripping tone letters from the end until we hit a non-tone char
-  // or an escaped pair.
-  let escaped = false;
-  while (raw.length >= 1) {
-    const last = raw.charAt(raw.length - 1).toLowerCase();
-    if (!TONES.has(last)) break;
-
-    // Check for escape: second-to-last is same letter
-    if (raw.length >= 2 && raw.charAt(raw.length - 2).toLowerCase() === last) {
-      // Escaped tone letter — strip one copy and output one literal; no tone
-      raw = raw.slice(0, -1);
-      tone = null; // escape cancels tone
-      escaped = true;
-      break;
-    }
-
-    // Only the rightmost tone letter wins; keep the first one found (right-to-left scan)
-    if (tone === null) tone = last;
-    raw = raw.slice(0, -1);
-  }
-
-  // Unless strict tones, also scan for tone markers appearing mid-word
-  // between vowels. Only markers that have a vowel somewhere after them are
-  // treated as tones (markers with no following vowel are final consonants or
-  // already handled by the trailing scan above). The last such marker wins,
-  // but only when no trailing tone was already found.
-  //
-  // In strict words mode, only non-Vietnamese tone letters (f, j, z) qualify — the
-  // Vietnamese-alphabet markers (s, r, x) are valid consonants in strict words mode
-  // and must flow through trimFinalConsonants instead.
-  if (!strictTones && tone === null && !escaped) {
-    const eligibleTones = strictWords
-      ? new Set([...TONE_MARKERS].filter((c) => !VIETNAMESE_LETTERS.has(c)))
-      : TONE_MARKERS;
-    let midTone: string | null = null;
-    let midToneIdx = -1;
-    let hadVowel = false;
-    for (let k = 0; k < raw.length; k++) {
-      const ch = raw.charAt(k).toLowerCase();
-      if (SIMPLE_VOWELS.has(ch)) {
-        hadVowel = true;
-      } else if (hadVowel && eligibleTones.has(ch)) {
-        // Accept as tone if removing it leaves a valid Vietnamese syllable.
-        // This handles tone before a final consonant ("tism"→"tím") and tone
-        // embedded within a final consonant digraph ("thicsh"→"thích").
-        const candidate = raw.slice(0, k) + raw.slice(k + 1);
-        if (isVietnamese(candidate)) {
-          midTone = ch; // last valid mid-word tone wins
-          midToneIdx = k;
-        }
-      }
-    }
-    if (midTone !== null) {
-      tone = midTone;
-      raw = raw.slice(0, midToneIdx) + raw.slice(midToneIdx + 1);
-    }
-  }
-
-  // Decode digraphs in the remaining token
-  let result = "";
-  // In strict words mode, track the first inline tone marker (f, j, z) that is not
-  // in the Vietnamese alphabet. When found, record the result length at that
-  // point so we can truncate everything after it (it marks the end of the
-  // syllable body) and use it as a fallback tone if no end-of-word tone exists.
-  let inlineToneChar: string | null = null;
-  let inlineToneTruncPos = -1;
-  let i = 0;
-  while (i < raw.length) {
-    const digraph = raw.slice(i, i + 2).toLowerCase();
-    const decoded = DIGRAPHS.get(digraph);
-    if (decoded !== undefined) {
-      const isUpper =
-        raw.charAt(i) === raw.charAt(i).toUpperCase() &&
-        raw.charAt(i) !== raw.charAt(i).toLowerCase();
-      if (
-        i + 2 < raw.length &&
-        raw.charAt(i + 2).toLowerCase() === raw.charAt(i + 1).toLowerCase()
-      ) {
-        // escape candidate: only honor if not strict, or if the pair is a
-        // recognized Vietnamese vowel cluster (only "oo" qualifies among the
-        // seven Telex digraphs)
-        if (!strictWords || NUCLEI.has(digraph)) {
-          result += raw.charAt(i) + raw.charAt(i + 1);
-          i += 3;
-        } else {
-          // escape rejected: decode digraph and discard the escape character
-          result += isUpper ? decoded.toUpperCase() : decoded;
-          i += 3;
-        }
-      } else {
-        // digraph match: decode and preserve case of first char
-        result += isUpper ? decoded.toUpperCase() : decoded;
-        i += 2;
-      }
-    } else {
-      const ch = raw.charAt(i).toLowerCase();
-      if (!strictWords || VIETNAMESE_LETTERS.has(ch)) {
-        result += raw.charAt(i);
-      } else if (strictWords && inlineToneTruncPos === -1 && TONES.has(ch)) {
-        // Non-Vietnamese tone marker (f, j, z) after a vowel signals the end
-        // of the syllable body; record the truncation point and capture as a
-        // potential tone. Markers before any vowel are simply discarded.
-        if (result.length > 0 && isVowel(result.charAt(result.length - 1))) {
-          inlineToneTruncPos = result.length;
-          inlineToneChar = ch;
-        }
-      }
-      i += 1;
-    }
-  }
-
-  // In strict words mode, apply any inline tone truncation found during decoding
-  if (strictWords && inlineToneTruncPos !== -1) {
-    result = result.slice(0, inlineToneTruncPos);
-    if (tone === null) tone = inlineToneChar;
-  }
-
-  // Trim invalid final consonants before tone application so isVowel works on
-  // undecorated characters
-  if (strictWords) {
-    result = trimInitialConsonants(result);
-    result = trimVowelCluster(result);
-    const trimmed = trimFinalConsonants(result);
-    result = trimmed.word;
-    // Use any tone marker found in the trimmed suffix if none was detected at word end
-    if (tone === null) tone = trimmed.tone;
-  }
-
-  // Apply tone. For "gi"/"qu" initial consonants, pass consonantLen=2 so that
-  // applyTone first looks for a vowel cluster after the terminal consonant vowel
-  // (e.g. "gia" → cluster "a", not "ia"). When no preferred cluster exists there,
-  // applyTone falls back to the full vowel run including the terminal vowel letter
-  // (e.g. "gi" alone → falls back to "i"; "quyê" → effStart clips run to "yê",
-  // whose fallback nucleusIndex correctly lands on "ê").
-  let consonantLen = 0;
-  const rl = result.toLowerCase();
-  if (rl.startsWith("gi") || rl.startsWith("qu")) consonantLen = 2;
-  if (tone !== null) {
-    result = applyTone(result, TONES.get(tone) ?? "", consonantLen);
-  }
-
-  return result;
 }
 
 /**
