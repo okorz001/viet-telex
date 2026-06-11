@@ -118,16 +118,10 @@ describe("parse", () => {
         "dd",
         { initialConsonant: "dd", state: "INITIAL_CONSONANT", input: "dd" },
       ],
-      // dd + d is a digraph escape → literal, flagged escaped
-      [
-        "ddd",
-        {
-          initialConsonant: "ddd",
-          escaped: true,
-          state: "INITIAL_CONSONANT",
-          input: "ddd",
-        },
-      ],
+      // dd + d is a digraph escape → literal "dd"; token drops to INVALID
+      ["ddd", { decoded: "dd", state: "INVALID", input: "ddd" }],
+      // INVALID keeps accumulating: the trailing "a" extends the literal
+      ["ddda", { decoded: "dda", state: "INVALID", input: "ddda" }],
       // qu ends in a vowel letter; the next vowel still hands off to VOWEL
       [
         "qua",

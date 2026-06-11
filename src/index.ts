@@ -386,11 +386,13 @@ export interface ParseContext extends Word {
    */
   input?: string;
   /**
-   * Set once a digraph or tone escape has been consumed (e.g. `aaa`, `catss`).
-   * An escaped word renders literally and skips structural validation, so this
-   * flag lets the render step tell a literal-escape word from an invalid one.
+   * The literal output text for an escaped, non-Vietnamese token (e.g. `ddd` → `dd`,
+   * `ass` → `as`). Set when a digraph or tone escape fires: at that point the token is
+   * no longer a valid syllable, so parsing drops to `INVALID`, the partial `Word` parts
+   * are abandoned, and this pre-resolved literal is what the render step returns. Its
+   * presence is also what distinguishes an escaped literal from a plain invalid token.
    */
-  escaped?: boolean;
+  decoded?: string;
 }
 
 /**
@@ -412,7 +414,13 @@ export function parse(ctx: ParseContext, letter: string): ParseContext {
   const state = ctx.state ?? "INITIAL_CONSONANT";
   const input = (ctx.input ?? "") + letter;
   const base: ParseContext = { ...ctx, input };
-  if (state === "INVALID") return { ...base, state: "INVALID" };
+  if (state === "INVALID") {
+    // An escaped literal keeps growing its tail; a plain invalid token only keeps
+    // raw input for passthrough.
+    const decoded =
+      ctx.decoded === undefined ? undefined : ctx.decoded + letter;
+    return { ...base, state: "INVALID", decoded };
+  }
   if (state === "INITIAL_CONSONANT") return parseInitialConsonant(base, letter);
   if (state === "VOWEL") return parseVowel(base, letter);
   // FINAL_CONSONANT stub (step 3)
@@ -429,13 +437,16 @@ function parseInitialConsonant(
 ): ParseContext {
   const ic = (ctx.initialConsonant ?? "").toLowerCase();
   const l = letter.toLowerCase();
-  // Digraph escape: "dd" + "d" → literal "dd" (decodeTelex("ddd") = "dd").
+  // Digraph escape: "dd" + "d" → literal "dd". This is no longer a valid syllable, so
+  // resolve the literal (decodeTelex collapses the doubled "d"), drop the Word part, and
+  // fall to INVALID. ctx.input already includes this letter, so it is the full escape
+  // sequence (e.g. "ddd" → "dd").
   if (ic === "dd" && l === "d") {
     return {
       ...ctx,
-      initialConsonant: (ctx.initialConsonant ?? "") + letter,
-      escaped: true,
-      state: "INITIAL_CONSONANT",
+      initialConsonant: undefined,
+      decoded: decodeTelex(ctx.input ?? ""),
+      state: "INVALID",
     };
   }
   // Greedily extend while the accumulated prefix is a prefix of some IC entry.
@@ -485,15 +496,17 @@ export function decode2(text: string, options?: DecodeOptions): string {
 
 // Renders a fully-parsed context to output text. strictWords still delegates to
 // the original pipeline (to be folded into the state machine later). Otherwise an
-// INVALID parse, or a structurally invalid non-escaped word, passes through as
-// the raw input; a valid or escaped word is rendered from its Word parts.
+// escaped token returns its pre-resolved `decoded` literal; an INVALID parse, or a
+// structurally invalid word, passes through as the raw input; a valid word is
+// rendered from its Word parts.
 function finalize(ctx: ParseContext, options?: DecodeOptions): string {
   const strictWords = options?.strictWords ?? false;
   const strictTones = options?.strictTones ?? false;
   const input = ctx.input ?? "";
   if (strictWords) return decodeWord(input, true, strictTones);
+  if (ctx.decoded !== undefined) return ctx.decoded;
   if (ctx.state === "INVALID") return input;
-  if (!ctx.escaped && !validate(ctx)) return input;
+  if (!validate(ctx)) return input;
   return render(ctx);
 }
 
