@@ -496,6 +496,23 @@ describe("decode2", () => {
     });
   });
 
+  describe("an escape makes the rest of the token literal", () => {
+    // Once a digraph/tone escape fires the token is non-Vietnamese, so trailing
+    // letters pass through verbatim — no tone marks, no further digraph decoding.
+    // The one exception is "oo", a real nucleus, which stays a vowel and still takes
+    // a tone ("ooos" → "oó", in the tone-marks block above).
+    it.for([
+      ["aaas", "aas"],
+      ["aaan", "aan"],
+      ["awws", "aws"],
+      ["dddoo", "ddoo"],
+      ["dddos", "ddos"],
+      ["ddds", "dds"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
   describe("vowels", () => {
     it.for([
       ["ao", "ao"],
