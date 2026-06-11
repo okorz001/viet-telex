@@ -350,8 +350,62 @@ export function validate(word: Word): boolean {
  * order: an optional initial consonant, the vowel cluster, then an optional
  * final consonant. `INVALID` is terminal — the buffered letters cannot form a
  * structurally valid Vietnamese syllable.
+ *
+ * Exported temporarily for unit testing during the decoder refactor; see
+ * {@link Word}.
  */
-type ParseState = "INITIAL_CONSONANT" | "VOWEL" | "FINAL_CONSONANT" | "INVALID";
+export type ParseState =
+  | "INITIAL_CONSONANT"
+  | "VOWEL"
+  | "FINAL_CONSONANT"
+  | "INVALID";
+
+/**
+ * The evolving state of the {@link parse} reducer as it walks a word one letter
+ * at a time. A context *is* a {@link Word} in progress — the Telex-encoded
+ * syllable parts recognized so far — plus the machine `state` and the raw
+ * `input` consumed. Because it carries the `Word` fields, a finished context
+ * renders to Unicode with {@link render} directly, so there is no separate read
+ * step.
+ *
+ * Exported temporarily for unit testing during the decoder refactor; see
+ * {@link Word}.
+ */
+export interface ParseContext extends Word {
+  /** The parser's current position in the syllable; see {@link ParseState}. */
+  state: ParseState;
+  /** The raw user input consumed so far, in its original case. */
+  input: string;
+  /**
+   * Set once a digraph or tone escape has been consumed (e.g. `aaa`, `catss`).
+   * An escaped word renders literally and skips structural validation, so this
+   * flag lets the render step tell a literal-escape word from an invalid one.
+   */
+  escaped?: boolean;
+}
+
+/**
+ * Advances the parse of one word by a single letter, returning a new
+ * {@link ParseContext} without mutating the original. Folding `parse` over a
+ * word's letters from an empty context — state `INITIAL_CONSONANT`, empty
+ * `input` — accumulates the {@link Word} parts, after which the context is
+ * rendered to Unicode. This is the functional replacement for the stateful
+ * `Decoder`: a fresh context takes the place of `clear()`, and rendering the
+ * context takes the place of `read()`.
+ *
+ * Exported temporarily for unit testing during the decoder refactor; see
+ * {@link Word}.
+ *
+ * @param ctx - The current parse context; use an empty context to begin a word
+ * @param letter - The next input letter to consume
+ * @returns A new {@link ParseContext} reflecting `letter` having been consumed
+ */
+export function parse(ctx: ParseContext, letter: string): ParseContext {
+  const input = ctx.input + letter;
+  // TODO: dispatch on ctx.state (INITIAL_CONSONANT → VOWEL → FINAL_CONSONANT,
+  // with INVALID terminal). This stub only accumulates the raw input for now.
+  return { ...ctx, input };
+}
 
 // True when a Telex vowel cluster decodes to a complete, standalone Vietnamese
 // nucleus (a single vowel or a known cluster). Used to decide whether a "gi"/"qu"
