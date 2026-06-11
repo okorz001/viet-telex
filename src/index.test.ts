@@ -581,6 +581,22 @@ describe("decode2", () => {
     });
   });
 
+  describe("a tone letter is a tone only after a vowel", () => {
+    // s/r/x double as initial consonants, so before the vowel they are not tones:
+    // here they follow another consonant (can neither start nor extend it) → INVALID.
+    // The same letters after the vowel ARE tones.
+    it.for([
+      ["msa", "msa"],
+      ["mas", "má"],
+      ["mra", "mra"],
+      ["mar", "mả"],
+      ["mxa", "mxa"],
+      ["max", "mã"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
   describe("non-Vietnamese", () => {
     describe("invalid initial consonant", () => {
       it.for([
