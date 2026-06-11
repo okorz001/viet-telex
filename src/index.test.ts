@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { encode, decode } from "./index.js";
 
+// all tests should have a single assertion
+// test names should be "<input> → <output>"
+
 describe("decode", () => {
   describe("extended Latin digraphs", () => {
     it.for([
