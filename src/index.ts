@@ -220,12 +220,8 @@ function applyTone(
  * rather than decoded Unicode. Telex keeps parsing cheap — escapes are just a
  * doubled character (e.g. `dd` for đ, `uaa` for uâ) — and keeps the model easy to
  * read when logging. {@link render} decodes it to Unicode.
- *
- * Exported temporarily so the new decoder components can be unit-tested in
- * isolation while `decode` is being refactored; it will become internal again
- * once `decode` is rewritten to use them.
  */
-export interface Word {
+interface Word {
   /** Initial consonant in Telex, e.g. `b`, `dd` (đ), `ng`, `qu`. */
   initialConsonant?: string;
   /** Vowel cluster in Telex, e.g. `a`, `uw` (ư), `uaa` (uâ). */
@@ -281,13 +277,10 @@ function decodeTelex(s: string): string {
  * consonant length of 2 for `gi`/`qu` initials so the mark lands past the
  * consonant's trailing vowel letter.
  *
- * Exported temporarily for unit testing during the decoder refactor; see
- * {@link Word}.
- *
  * @param word - A parsed syllable with Telex-encoded parts; see {@link Word}
  * @returns The syllable as Unicode Vietnamese text in NFC form
  */
-export function render(word: Word): string {
+function render(word: Word): string {
   const initial = word.initialConsonant ?? "";
   const vowel = word.vowel ?? "";
   const li = initial.toLowerCase();
@@ -337,13 +330,10 @@ export function render(word: Word): string {
  * a bare initial consonant such as `dd` (đ), matching how whole-consonant tokens
  * decode.
  *
- * Exported temporarily for unit testing during the decoder refactor; see
- * {@link Word}.
- *
  * @param word - A parsed syllable with Telex-encoded parts; see {@link Word}
  * @returns `true` if the syllable is structurally valid Vietnamese
  */
-export function validate(word: Word): boolean {
+function validate(word: Word): boolean {
   const initial = (word.initialConsonant ?? "").toLowerCase();
   if (initial !== "" && !INITIAL_CONSONANTS.includes(initial)) return false;
 
@@ -365,36 +355,17 @@ export function validate(word: Word): boolean {
   return prefix !== "" && NUCLEI.has(prefix + vowel);
 }
 
-/**
- * The four states of the syllable parser. A Vietnamese syllable is walked in
- * order: an optional initial consonant, the vowel cluster, then an optional
- * final consonant. `INVALID` is terminal — the buffered letters cannot form a
- * structurally valid Vietnamese syllable.
- *
- * Exported temporarily for unit testing during the decoder refactor; see
- * {@link Word}.
- */
-export type ParseState =
-  | "INITIAL_CONSONANT"
-  | "VOWEL"
-  | "FINAL_CONSONANT"
-  | "INVALID";
+// The four states of the syllable parser. A Vietnamese syllable is walked in
+// order: an optional initial consonant, the vowel cluster, then an optional
+// final consonant. INVALID is terminal — the buffered letters cannot form a
+// structurally valid Vietnamese syllable.
+type ParseState = "INITIAL_CONSONANT" | "VOWEL" | "FINAL_CONSONANT" | "INVALID";
 
-/**
- * The evolving state of the {@link parse} reducer as it walks a word one letter
- * at a time. A context *is* a {@link Word} in progress — the Telex-encoded
- * syllable parts recognized so far — plus the machine `state` and the raw
- * `input` consumed. Because it carries the `Word` fields, a finished context
- * renders to Unicode with {@link render} directly, so there is no separate read
- * step.
- *
- * `state` and `input` are optional so an empty `{}` is a valid starting context;
- * {@link parse} defaults them to `INITIAL_CONSONANT` and `""` on the first letter.
- *
- * Exported temporarily for unit testing during the decoder refactor; see
- * {@link Word}.
- */
-export interface ParseContext extends Word {
+// The evolving state of the parse reducer as it walks a word one letter at a
+// time. A context is a Word in progress — the Telex-encoded syllable parts
+// recognized so far — plus the machine state and the raw input consumed.
+// state and input are optional so an empty {} is a valid starting context.
+interface ParseContext extends Word {
   /**
    * The parser's current position in the syllable; see {@link ParseState}.
    * Absent on a fresh context — {@link parse} defaults it to `INITIAL_CONSONANT`.
@@ -415,23 +386,7 @@ export interface ParseContext extends Word {
   decoded?: string;
 }
 
-/**
- * Advances the parse of one word by a single letter, returning a new
- * {@link ParseContext} without mutating the original. Folding `parse` over a
- * word's letters from an empty `{}` context accumulates the {@link Word} parts,
- * after which the context is rendered to Unicode. A missing `state`/`input` is
- * defaulted (to `INITIAL_CONSONANT` and `""`), so a word just starts from `{}`;
- * the finished context is rendered directly, with no separate read step.
- *
- * Exported temporarily for unit testing during the decoder refactor; see
- * {@link Word}.
- *
- * @param ctx - The parse context so far; pass `{}` to begin a new word
- * @param letter - The next input letter to consume
- * @param options - Optional decoding options; see {@link DecodeOptions}
- * @returns A new {@link ParseContext} reflecting `letter` having been consumed
- */
-export function parse(
+function parse(
   ctx: ParseContext,
   letter: string,
   options?: DecodeOptions,
