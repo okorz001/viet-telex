@@ -368,14 +368,23 @@ export type ParseState =
  * renders to Unicode with {@link render} directly, so there is no separate read
  * step.
  *
+ * `state` and `input` are optional so an empty `{}` is a valid starting context;
+ * {@link parse} defaults them to `INITIAL_CONSONANT` and `""` on the first letter.
+ *
  * Exported temporarily for unit testing during the decoder refactor; see
  * {@link Word}.
  */
 export interface ParseContext extends Word {
-  /** The parser's current position in the syllable; see {@link ParseState}. */
-  state: ParseState;
-  /** The raw user input consumed so far, in its original case. */
-  input: string;
+  /**
+   * The parser's current position in the syllable; see {@link ParseState}.
+   * Absent on a fresh context — {@link parse} defaults it to `INITIAL_CONSONANT`.
+   */
+  state?: ParseState;
+  /**
+   * The raw user input consumed so far, in its original case. Absent on a fresh
+   * context — {@link parse} defaults it to the empty string.
+   */
+  input?: string;
   /**
    * Set once a digraph or tone escape has been consumed (e.g. `aaa`, `catss`).
    * An escaped word renders literally and skips structural validation, so this
@@ -387,23 +396,24 @@ export interface ParseContext extends Word {
 /**
  * Advances the parse of one word by a single letter, returning a new
  * {@link ParseContext} without mutating the original. Folding `parse` over a
- * word's letters from an empty context — state `INITIAL_CONSONANT`, empty
- * `input` — accumulates the {@link Word} parts, after which the context is
- * rendered to Unicode. Each word begins from a fresh, empty context, and the
- * finished context is rendered directly — there is no separate read step.
+ * word's letters from an empty `{}` context accumulates the {@link Word} parts,
+ * after which the context is rendered to Unicode. A missing `state`/`input` is
+ * defaulted (to `INITIAL_CONSONANT` and `""`), so a word just starts from `{}`;
+ * the finished context is rendered directly, with no separate read step.
  *
  * Exported temporarily for unit testing during the decoder refactor; see
  * {@link Word}.
  *
- * @param ctx - The current parse context; use an empty context to begin a word
+ * @param ctx - The parse context so far; pass `{}` to begin a new word
  * @param letter - The next input letter to consume
  * @returns A new {@link ParseContext} reflecting `letter` having been consumed
  */
 export function parse(ctx: ParseContext, letter: string): ParseContext {
-  const input = ctx.input + letter;
-  // TODO: dispatch on ctx.state (INITIAL_CONSONANT → VOWEL → FINAL_CONSONANT,
-  // with INVALID terminal). This stub only accumulates the raw input for now.
-  return { ...ctx, input };
+  const state = ctx.state ?? "INITIAL_CONSONANT";
+  const input = (ctx.input ?? "") + letter;
+  // TODO: dispatch on state (INITIAL_CONSONANT → VOWEL → FINAL_CONSONANT, with
+  // INVALID terminal). This stub only accumulates the raw input for now.
+  return { ...ctx, state, input };
 }
 
 /**
@@ -420,7 +430,7 @@ export function decode2(text: string, options?: DecodeOptions): string {
   return tokens
     .map((token) => {
       if (!token || /[^a-zA-Z]/.test(token)) return token;
-      let ctx: ParseContext = { state: "INITIAL_CONSONANT", input: "" };
+      let ctx: ParseContext = {};
       for (const ch of token) ctx = parse(ctx, ch);
       return finalize(ctx, options);
     })
@@ -434,9 +444,10 @@ export function decode2(text: string, options?: DecodeOptions): string {
 function finalize(ctx: ParseContext, options?: DecodeOptions): string {
   const strictWords = options?.strictWords ?? false;
   const strictTones = options?.strictTones ?? false;
-  if (strictWords) return decodeWord(ctx.input, true, strictTones);
-  if (ctx.state === "INVALID") return ctx.input;
-  if (!ctx.escaped && !validate(ctx)) return ctx.input;
+  const input = ctx.input ?? "";
+  if (strictWords) return decodeWord(input, true, strictTones);
+  if (ctx.state === "INVALID") return input;
+  if (!ctx.escaped && !validate(ctx)) return input;
   return render(ctx);
 }
 
