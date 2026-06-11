@@ -35,7 +35,7 @@ Field | Holds | Telex Example | Decodes To
 `initialConsonant` | Onset | `dd`, `ng`, `qu` | đ, ng, qu
 `vowel` | Nucleus cluster | `uw`, `uaa` | ư, uâ
 `finalConsonant` | Coda | `c`, `ch`, `ng` | c, ch, ng
-`tone` | Tone letter `s`/`f`/`r`/`x`/`j` | `s` | dấu sắc
+`tone` | Tone letter `s`/`f`/`r`/`x`/`j` | `s` | dấu sắc (´)
 
 On top of the `Word` parts, the context tracks the machine itself:
 
