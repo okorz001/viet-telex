@@ -782,16 +782,7 @@ export interface DecodeOptions {
  * @returns Vietnamese Unicode text in NFC form
  */
 export function decode(text: string, options?: DecodeOptions): string {
-  const strictWords = options?.strictWords ?? false;
-  const strictTones = options?.strictTones ?? false;
-  // Tokenize into alternating [word, separator, word, ...] segments
-  const tokens = text.split(/([^a-zA-Z]+)/);
-  return tokens
-    .map((token) => {
-      if (!token || /[^a-zA-Z]/.test(token)) return token; // separator
-      return decodeWord(token, strictWords, strictTones);
-    })
-    .join("");
+  return decode2(text, options);
 }
 
 // After decoding, trim any excess pre-vowel consonants that do not form a
