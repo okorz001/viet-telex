@@ -176,6 +176,73 @@ describe("parse", () => {
       expect(fold(input)).toEqual(expected);
     });
   });
+
+  describe("FINAL_CONSONANT state", () => {
+    const cases: [string, ParseContext][] = [
+      // a real consonant after the vowel is captured as the final consonant
+      [
+        "ban",
+        {
+          initialConsonant: "b",
+          vowel: "a",
+          finalConsonant: "n",
+          state: "FINAL_CONSONANT",
+          input: "ban",
+        },
+      ],
+      // a final digraph accumulates greedily (n → nh)
+      [
+        "banh",
+        {
+          initialConsonant: "b",
+          vowel: "a",
+          finalConsonant: "nh",
+          state: "FINAL_CONSONANT",
+          input: "banh",
+        },
+      ],
+      // a tone letter after the final sets the tone without ending the final
+      [
+        "bans",
+        {
+          initialConsonant: "b",
+          vowel: "a",
+          finalConsonant: "n",
+          tone: "s",
+          state: "FINAL_CONSONANT",
+          input: "bans",
+        },
+      ],
+      // a tone may sit within the final digraph: "c" + "s" (tone) + "h" → "ch"
+      [
+        "thicsh",
+        {
+          initialConsonant: "th",
+          vowel: "i",
+          finalConsonant: "ch",
+          tone: "s",
+          state: "FINAL_CONSONANT",
+          input: "thicsh",
+        },
+      ],
+      // gi/qu hand the trailing i/u to the vowel role, so a final attaches directly
+      [
+        "gin",
+        {
+          initialConsonant: "gi",
+          finalConsonant: "n",
+          state: "FINAL_CONSONANT",
+          input: "gin",
+        },
+      ],
+      // a letter that is not a valid final (here "d") drops the token to INVALID
+      ["odd", { vowel: "o", state: "INVALID", input: "odd" }],
+    ];
+
+    it.for(cases)("%s → %j", ([input, expected]) => {
+      expect(fold(input)).toEqual(expected);
+    });
+  });
 });
 
 describe("decode", () => {
@@ -450,11 +517,11 @@ describe("decode", () => {
   });
 });
 
-// decode2 ≡ decode, rebuilt one parse-state at a time. With INITIAL_CONSONANT
-// implemented and VOWEL still a verbatim-append stub, these are the cases that
-// already resolve correctly: ones decided entirely in INITIAL_CONSONANT state, or
-// whose raw vowel append happens to validate (or correctly fails to). Tone marks,
-// vowel-digraph escapes, and compound vowels arrive with the VOWEL state.
+// decode2 ≡ decode, rebuilt one parse-state at a time. All four parse states are now
+// implemented (INITIAL_CONSONANT, VOWEL, FINAL_CONSONANT, INVALID), so decode2 matches
+// decode across structurally valid syllables. It intentionally differs from decode only
+// on contrived non-words in two quirk families noted in the blocks below: an escape ends
+// the syllable (the rest is literal), and a tone is honored only where these tests show.
 describe("decode2", () => {
   describe("extended Latin digraphs", () => {
     it.for([
@@ -566,6 +633,12 @@ describe("decode2", () => {
       ["gia", "gia"],
       ["qua", "qua"],
       ["quy", "quy"],
+      // the trailing i/u acts as the nucleus, so a tone or final attaches directly
+      ["gif", "gì"],
+      ["gin", "gin"],
+      ["ginf", "gìn"],
+      ["quan", "quan"],
+      ["quyeenr", "quyển"],
     ])("%s → %s", ([input, output]) => {
       expect(decode2(input)).toBe(output);
     });
@@ -597,6 +670,57 @@ describe("decode2", () => {
     });
   });
 
+  describe("final consonants", () => {
+    it.for([
+      ["ban", "ban"],
+      ["banh", "banh"],
+      ["cam", "cam"],
+      ["bang", "bang"],
+      ["sang", "sang"],
+      ["cac", "cac"],
+      ["cach", "cach"], // final digraph "ch"
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
+  describe("tone around the final consonant", () => {
+    it.for([
+      ["bans", "bán"], // tone after the final
+      ["banhs", "bánh"],
+      ["tism", "tím"], // tone before the final
+      ["basn", "bán"],
+      ["thicsh", "thích"], // tone wedged inside the final digraph
+      ["thisch", "thích"], // tone before the final digraph
+      ["thichs", "thích"], // tone after the final digraph
+      // doubling a tone letter escapes it, abandoning the syllable for the literal
+      ["banss", "bans"],
+      ["banhss", "banhs"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
+  describe("strictTones — a tone is honored only at the end", () => {
+    // A tone followed by any further non-tone letter means it was mid-word, so the
+    // whole token passes through unchanged. Trailing tones (last wins) are still fine.
+    it.for([
+      // mid-word tone → passthrough
+      ["mafu", "mafu"],
+      ["basn", "basn"],
+      ["thicsh", "thicsh"],
+      ["thicshf", "thicshf"], // earlier wedged "s" rejected despite the trailing "f"
+      ["tism", "tism"],
+      // tone at the end → still decoded
+      ["bans", "bán"],
+      ["banhs", "bánh"],
+      ["basf", "bà"],
+      ["gif", "gì"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input, { strictTones: true })).toBe(output);
+    });
+  });
+
   describe("non-Vietnamese", () => {
     describe("invalid initial consonant", () => {
       it.for([
@@ -620,8 +744,16 @@ describe("decode2", () => {
       });
     });
 
-    // "invalid final consonant" (odd, seed) lands with the FINAL_CONSONANT state in
-    // step 3 — the vowel state hands finals to a stub that does not yet reject them.
+    describe("invalid final consonant", () => {
+      it.for([
+        ["odd", "odd"],
+        ["seed", "seed"],
+        ["bag", "bag"],
+        ["bant", "bant"],
+      ])("%s → %s", ([input, output]) => {
+        expect(decode2(input)).toBe(output);
+      });
+    });
   });
 });
 

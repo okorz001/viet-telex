@@ -408,9 +408,16 @@ export interface ParseContext extends Word {
  *
  * @param ctx - The parse context so far; pass `{}` to begin a new word
  * @param letter - The next input letter to consume
+ * @param strictTones - When `true`, a tone letter is honored only at the end of the
+ *   word: once a tone has been set, any further non-tone letter drops the token to
+ *   `INVALID`, so a mid-word tone yields a passthrough. Defaults to `false`.
  * @returns A new {@link ParseContext} reflecting `letter` having been consumed
  */
-export function parse(ctx: ParseContext, letter: string): ParseContext {
+export function parse(
+  ctx: ParseContext,
+  letter: string,
+  strictTones = false,
+): ParseContext {
   const state = ctx.state ?? "INITIAL_CONSONANT";
   const input = (ctx.input ?? "") + letter;
   const base: ParseContext = { ...ctx, input };
@@ -421,10 +428,10 @@ export function parse(ctx: ParseContext, letter: string): ParseContext {
       ctx.decoded === undefined ? undefined : ctx.decoded + letter;
     return { ...base, state: "INVALID", decoded };
   }
-  if (state === "INITIAL_CONSONANT") return parseInitialConsonant(base, letter);
-  if (state === "VOWEL") return parseVowel(base, letter);
-  // FINAL_CONSONANT stub (step 3)
-  return { ...base, state: "FINAL_CONSONANT" };
+  if (state === "INITIAL_CONSONANT")
+    return parseInitialConsonant(base, letter, strictTones);
+  if (state === "VOWEL") return parseVowel(base, letter, strictTones);
+  return parseFinalConsonant(base, letter, strictTones);
 }
 
 // INITIAL_CONSONANT state: build up the leading consonant cluster, then hand off
@@ -434,6 +441,7 @@ export function parse(ctx: ParseContext, letter: string): ParseContext {
 function parseInitialConsonant(
   ctx: ParseContext,
   letter: string,
+  strictTones: boolean,
 ): ParseContext {
   const ic = (ctx.initialConsonant ?? "").toLowerCase();
   const l = letter.toLowerCase();
@@ -461,7 +469,13 @@ function parseInitialConsonant(
   }
   // A vowel ends the (possibly empty) initial; reprocess it in the VOWEL state.
   if (SIMPLE_VOWELS.has(l)) {
-    return parseVowel({ ...ctx, state: "VOWEL" }, letter);
+    return parseVowel({ ...ctx, state: "VOWEL" }, letter, strictTones);
+  }
+  // For "gi"/"qu" the trailing i/u is itself the nucleus, so a directly following
+  // tone or final consonant (no further vowel) is parsed as if the vowel were
+  // already complete: "gif" → gì, "gin" → gin, "ginf" → gìn.
+  if (ic === "gi" || ic === "qu") {
+    return parseVowel({ ...ctx, state: "VOWEL" }, letter, strictTones);
   }
   // Any other letter cannot begin or extend a Vietnamese syllable here.
   return { ...ctx, state: "INVALID" };
@@ -470,10 +484,22 @@ function parseInitialConsonant(
 // VOWEL state: accumulate the vowel cluster (kept in Telex form, decoded by render),
 // record the tone, and resolve vowel digraph escapes. A real consonant ends the vowel
 // and hands off to the FINAL_CONSONANT state.
-function parseVowel(ctx: ParseContext, letter: string): ParseContext {
+function parseVowel(
+  ctx: ParseContext,
+  letter: string,
+  strictTones: boolean,
+): ParseContext {
   const vowel = ctx.vowel ?? "";
   const lv = vowel.toLowerCase();
   const l = letter.toLowerCase();
+
+  // strictTones: a tone is honored only at the end of the word. Once a tone has been
+  // set, any further non-tone letter means it was mid-word, so the whole token is
+  // non-Vietnamese and passes through unchanged (INVALID). A following tone letter is
+  // still allowed (trailing tones, last wins) and is handled below.
+  if (strictTones && ctx.tone !== undefined && !TONE_MARKERS.has(l)) {
+    return { ...ctx, state: "INVALID" };
+  }
 
   // Tone letters (s/f/r/x/j/z) set the tone rather than extend the cluster. Doubling a
   // tone letter escapes it (e.g. "ass", "azz"): the first set the tone, the second
@@ -519,8 +545,68 @@ function parseVowel(ctx: ParseContext, letter: string): ParseContext {
     return { ...ctx, vowel: vowel + letter, state: "VOWEL" };
   }
 
-  // Any real consonant ends the vowel; the final consonant is parsed in step 3.
-  return { ...ctx, state: "FINAL_CONSONANT" };
+  // Any real consonant ends the vowel; reprocess it in the FINAL_CONSONANT state.
+  return parseFinalConsonant(
+    { ...ctx, state: "FINAL_CONSONANT" },
+    letter,
+    strictTones,
+  );
+}
+
+// FINAL_CONSONANT state: accumulate the final consonant via greedy prefix match over
+// FINAL_CONSONANTS (which includes the digraphs "ch"/"ng"/"nh"). A tone letter sets the
+// tone rather than extending the final and does not end it, so a tone may sit within a
+// final digraph (e.g. "thicsh" → thích); doubling a tone letter escapes it (e.g.
+// "banss" → "bans"). Any letter that neither extends the final nor is a tone ends the
+// syllable as INVALID — a second final consonant or a trailing vowel cannot follow.
+function parseFinalConsonant(
+  ctx: ParseContext,
+  letter: string,
+  strictTones: boolean,
+): ParseContext {
+  const final = ctx.finalConsonant ?? "";
+  const l = letter.toLowerCase();
+
+  // strictTones: a tone is honored only at the end of the word (see parseVowel). Once
+  // set, a further non-tone letter (e.g. the "h" of "thicsh") means it was mid-word.
+  if (strictTones && ctx.tone !== undefined && !TONE_MARKERS.has(l)) {
+    return { ...ctx, state: "INVALID" };
+  }
+
+  // Tone letters set the tone; doubling one escapes it, abandoning the syllable for the
+  // literal pair (e.g. "banss" → "bans").
+  if (TONE_MARKERS.has(l)) {
+    const input = ctx.input ?? "";
+    if (input.slice(-2, -1).toLowerCase() === l) {
+      const literal = input.slice(0, -2) + input.slice(-1);
+      return {
+        ...ctx,
+        vowel: undefined,
+        finalConsonant: undefined,
+        tone: undefined,
+        decoded: decodeTelex(literal),
+        state: "INVALID",
+      };
+    }
+    // "z" is the neutral tone and clears any mark; the rest set one (last wins).
+    return {
+      ...ctx,
+      tone: l === "z" ? undefined : l,
+      state: "FINAL_CONSONANT",
+    };
+  }
+
+  // Extend while the accumulated final is a prefix of some valid final consonant.
+  if (FINAL_CONSONANTS.some((c) => c.startsWith(final + l))) {
+    return {
+      ...ctx,
+      finalConsonant: (ctx.finalConsonant ?? "") + letter,
+      state: "FINAL_CONSONANT",
+    };
+  }
+
+  // Anything else cannot continue the syllable.
+  return { ...ctx, state: "INVALID" };
 }
 
 /**
@@ -533,12 +619,13 @@ function parseVowel(ctx: ParseContext, letter: string): ParseContext {
  * @returns Vietnamese Unicode text in NFC form
  */
 export function decode2(text: string, options?: DecodeOptions): string {
+  const strictTones = options?.strictTones ?? false;
   const tokens = text.split(/([^a-zA-Z]+)/);
   return tokens
     .map((token) => {
       if (!token || /[^a-zA-Z]/.test(token)) return token;
       let ctx: ParseContext = {};
-      for (const ch of token) ctx = parse(ctx, ch);
+      for (const ch of token) ctx = parse(ctx, ch, strictTones);
       return finalize(ctx, options);
     })
     .join("");
