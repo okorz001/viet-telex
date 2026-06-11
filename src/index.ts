@@ -467,10 +467,60 @@ function parseInitialConsonant(
   return { ...ctx, state: "INVALID" };
 }
 
-// VOWEL state — step 2 stub: accumulate letters into the vowel cluster verbatim.
-// Tone handling, digraph escapes, and the hand-off to FINAL_CONSONANT land next.
+// VOWEL state: accumulate the vowel cluster (kept in Telex form, decoded by render),
+// record the tone, and resolve vowel digraph escapes. A real consonant ends the vowel
+// and hands off to the FINAL_CONSONANT state.
 function parseVowel(ctx: ParseContext, letter: string): ParseContext {
-  return { ...ctx, vowel: (ctx.vowel ?? "") + letter, state: "VOWEL" };
+  const vowel = ctx.vowel ?? "";
+  const lv = vowel.toLowerCase();
+  const l = letter.toLowerCase();
+
+  // Tone letters (s/f/r/x/j/z) set the tone rather than extend the cluster. Doubling a
+  // tone letter escapes it (e.g. "ass", "azz"): the first set the tone, the second
+  // reverts it and leaves a literal, non-Vietnamese letter behind.
+  if (TONE_MARKERS.has(l)) {
+    const input = ctx.input ?? "";
+    if (input.slice(-2, -1).toLowerCase() === l) {
+      const literal = input.slice(0, -2) + input.slice(-1);
+      return {
+        ...ctx,
+        vowel: undefined,
+        tone: undefined,
+        decoded: decodeTelex(literal),
+        state: "INVALID",
+      };
+    }
+    // "z" is the neutral tone and clears any mark; the rest set one (last wins).
+    return { ...ctx, tone: l === "z" ? undefined : l, state: "VOWEL" };
+  }
+
+  // Vowel digraph escape: the cluster ends in a Telex digraph and this letter doubles
+  // its second character (e.g. "oo" + "o", "aa" + "a"). The literal pair is a valid
+  // vowel only for "oo" (a nucleus, as in "xoong"); the others ("aa", "aw", "ee",
+  // "ow", "uw") are non-Vietnamese and pass through literally.
+  if (VOWEL_DIGRAPHS.includes(lv.slice(-2)) && l === lv.slice(-1)) {
+    const literal = decodeTelex(vowel + letter);
+    if (NUCLEI.has(literal.toLowerCase())) {
+      return { ...ctx, vowel: vowel + letter, state: "VOWEL" };
+    }
+    return {
+      ...ctx,
+      vowel: undefined,
+      decoded: decodeTelex(ctx.input ?? ""),
+      state: "INVALID",
+    };
+  }
+
+  // A vowel letter, or a "w" completing "aw"/"ow"/"uw", extends the cluster.
+  if (
+    SIMPLE_VOWELS.has(l) ||
+    (l === "w" && ["a", "o", "u"].includes(lv.slice(-1)))
+  ) {
+    return { ...ctx, vowel: vowel + letter, state: "VOWEL" };
+  }
+
+  // Any real consonant ends the vowel; the final consonant is parsed in step 3.
+  return { ...ctx, state: "FINAL_CONSONANT" };
 }
 
 /**

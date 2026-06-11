@@ -137,6 +137,45 @@ describe("parse", () => {
       expect(fold(input)).toEqual(expected);
     });
   });
+
+  describe("VOWEL state", () => {
+    const cases: [string, ParseContext][] = [
+      // a compound vowel cluster accumulates in the vowel field (Telex form)
+      [
+        "bao",
+        { initialConsonant: "b", vowel: "ao", state: "VOWEL", input: "bao" },
+      ],
+      // "w" completes a digraph (a → ă) and stays in the vowel cluster
+      [
+        "baw",
+        { initialConsonant: "b", vowel: "aw", state: "VOWEL", input: "baw" },
+      ],
+      // "ooo" escapes "oo" → ô to literal "oo", itself a valid nucleus — still a vowel
+      ["ooo", { vowel: "ooo", state: "VOWEL", input: "ooo" }],
+      // other vowel digraph escapes are non-Vietnamese → literal, INVALID
+      ["aaa", { decoded: "aa", state: "INVALID", input: "aaa" }],
+      ["Oww", { decoded: "Ow", state: "INVALID", input: "Oww" }],
+      // a tone letter sets the tone without extending the cluster
+      [
+        "bas",
+        {
+          initialConsonant: "b",
+          vowel: "a",
+          tone: "s",
+          state: "VOWEL",
+          input: "bas",
+        },
+      ],
+      // "z" is the neutral tone — it clears the tone, leaving none
+      ["az", { vowel: "a", state: "VOWEL", input: "az" }],
+      // a doubled tone letter escapes to a literal → INVALID
+      ["ass", { decoded: "as", state: "INVALID", input: "ass" }],
+    ];
+
+    it.for(cases)("%s → %j", ([input, expected]) => {
+      expect(fold(input)).toEqual(expected);
+    });
+  });
 });
 
 describe("decode", () => {
@@ -441,7 +480,76 @@ describe("decode2", () => {
   });
 
   describe("digraph escape sequences", () => {
-    it.for([["ddd", "dd"]])("%s → %s", ([input, output]) => {
+    it.for([
+      // doubled second character → the literal pair; "oo" is itself a valid nucleus
+      ["ddd", "dd"],
+      ["aaa", "aa"],
+      ["eee", "ee"],
+      ["aww", "aw"],
+      ["oww", "ow"],
+      ["Oww", "Ow"],
+      ["uww", "uw"],
+      ["ooo", "oo"],
+      ["baaa", "baa"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
+  describe("vowels", () => {
+    it.for([
+      ["ao", "ao"],
+      ["oa", "oa"],
+      ["hoa", "hoa"],
+      ["beo", "beo"],
+      ["mua", "mua"],
+      ["bao", "bao"],
+      ["ngu", "ngu"],
+      ["baw", "bă"],
+      ["bow", "bơ"],
+      ["tuw", "tư"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
+  describe("tone marks", () => {
+    it.for([
+      ["as", "á"],
+      ["af", "à"],
+      ["ar", "ả"],
+      ["ax", "ã"],
+      ["aj", "ạ"],
+      ["az", "a"],
+      ["bas", "bá"],
+      ["muas", "múa"],
+      ["oos", "ố"],
+      ["ooos", "oó"],
+      ["aas", "ấ"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
+  describe("tone escape sequences", () => {
+    it.for([
+      ["ass", "as"],
+      ["oss", "os"],
+      ["azz", "az"],
+      ["afs", "á"],
+      ["asz", "a"],
+    ])("%s → %s", ([input, output]) => {
+      expect(decode2(input)).toBe(output);
+    });
+  });
+
+  describe("gi and qu", () => {
+    it.for([
+      ["gi", "gi"],
+      ["gia", "gia"],
+      ["qua", "qua"],
+      ["quy", "quy"],
+    ])("%s → %s", ([input, output]) => {
       expect(decode2(input)).toBe(output);
     });
   });
@@ -479,14 +587,8 @@ describe("decode2", () => {
       });
     });
 
-    describe("invalid final consonant", () => {
-      it.for([
-        ["odd", "odd"],
-        ["seed", "seed"],
-      ])("%s → %s", ([input, output]) => {
-        expect(decode2(input)).toBe(output);
-      });
-    });
+    // "invalid final consonant" (odd, seed) lands with the FINAL_CONSONANT state in
+    // step 3 — the vowel state hands finals to a stub that does not yet reject them.
   });
 });
 
