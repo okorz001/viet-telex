@@ -14,6 +14,10 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
   decode("phowr"); // "phở"
   decode("Xin chaof"); // "Xin chào"
 
+  // "gi" and "qu" use their trailing vowel as the syllable nucleus
+  decode("gif"); // "gì"  — tone follows directly after the "gi" initial
+  decode("quyeenr"); // "quyển"  — "qu" + "yee"→"yê" vowel + "n" final + "r" tone
+
   // Non-Vietnamese words pass through unchanged
   decode("show me the banhs mif"); // "show me the bánh mì"
   ```
