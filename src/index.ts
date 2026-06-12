@@ -134,85 +134,12 @@ const VALID_TELEX_VOWEL_PREFIXES: Set<string> = (() => {
   return prefixes;
 })();
 
-function isVowel(ch: string): boolean {
-  return VOWELS.has(ch.toLowerCase());
-}
-
 // Find the index within `vowelCluster` (lowercase) of the nucleus vowel.
 function nucleusIndex(cluster: string): number {
   const ni = NUCLEI.get(cluster);
   if (ni !== undefined) return ni;
   // Fallback: last vowel (index length - 1)
   return cluster.length - 1;
-}
-
-// Apply a combining tone mark to the nucleus vowel within a decoded word.
-// vowelStart: position where the vowel cluster search begins (used to skip
-// the terminal vowel letter of "gi"/"qu" initial consonants). When no vowel
-// cluster is found at or after vowelStart, falls back to searching the full word.
-function applyTone(
-  word: string,
-  combiningMark: string,
-  vowelStart = 0,
-): string {
-  if (!combiningMark) return word; // neutral tone — no mark
-
-  // Scan for vowel runs. For each run [runStart, runEnd):
-  //   - If the run starts at or after vowelStart, consider it as-is (preferred).
-  //   - If the run starts before vowelStart but extends past it, truncate its
-  //     effective start to vowelStart (e.g. "ia" in "gia" with vowelStart=2 → "a").
-  //   - If the run lies entirely before vowelStart (e.g. "i" in "gi"), keep it
-  //     as a fallback used only when no preferred cluster exists.
-  const lower = word.toLowerCase();
-  let clusterStart = -1;
-  let clusterEnd = -1;
-  let fbStart = -1;
-  let fbEnd = -1;
-  let i = 0;
-  while (i < lower.length) {
-    if (isVowel(lower.charAt(i))) {
-      const runStart = i;
-      while (i < lower.length && isVowel(lower.charAt(i))) i++;
-      const runEnd = i;
-      const effStart = Math.max(runStart, vowelStart);
-      if (effStart < runEnd) {
-        // Run extends into or starts within the preferred zone.
-        if (runEnd - effStart > clusterEnd - clusterStart) {
-          clusterStart = effStart;
-          clusterEnd = runEnd;
-        }
-      } else {
-        // Run lies entirely before vowelStart — save as fallback.
-        if (runEnd - runStart > fbEnd - fbStart) {
-          fbStart = runStart;
-          fbEnd = runEnd;
-        }
-      }
-    } else {
-      i++;
-    }
-  }
-
-  if (clusterStart === -1) {
-    clusterStart = fbStart;
-    clusterEnd = fbEnd;
-  }
-
-  if (clusterStart === -1) return word; // no vowel found — shouldn't happen
-
-  const cluster = lower.slice(clusterStart, clusterEnd);
-  const ni = nucleusIndex(cluster);
-  const nucleusPos = clusterStart + ni;
-
-  // Compose the mark onto the nucleus character
-  const before = word.slice(0, nucleusPos);
-  const nucleus = word.charAt(nucleusPos);
-  const after = word.slice(nucleusPos + 1);
-  return (
-    before +
-    (nucleus + combiningMark).normalize("NFC") +
-    after
-  ).normalize("NFC");
 }
 
 /**
@@ -273,9 +200,11 @@ function decodeTelex(s: string): string {
  *
  * Each part of the {@link Word} is Telex-encoded; this decodes the digraphs
  * (e.g. `dd`→đ, `uw`→ư, with a doubled character escaping the digraph) and then
- * places the tone mark on the nucleus vowel via {@link applyTone}, using a
- * consonant length of 2 for `gi`/`qu` initials so the mark lands past the
- * consonant's trailing vowel letter.
+ * places the tone mark directly on the nucleus vowel. The nucleus position is
+ * derived from the decoded vowel cluster via {@link nucleusIndex}, so no string
+ * scanning is needed. For `gi`/`qu` initials whose trailing vowel letter would
+ * duplicate the first character of the vowel field, only the leading consonant
+ * letter is emitted (e.g. `qu` + `uyee` → `q` + `uyee` = "quyê").
  *
  * @param word - A parsed syllable with Telex-encoded parts; see {@link Word}
  * @returns The syllable as Unicode Vietnamese text in NFC form
@@ -287,28 +216,34 @@ function render(word: Word): string {
   const lv = vowel.toLowerCase();
 
   // When gi/qu's trailing vowel letter is already the first letter of the vowel
-  // field (the complete vowel is stored there), emit only the leading consonant
-  // letter so the output isn't doubled (e.g. qu + uyee → q + uyee = "quyee").
-  // consonantLen=1 tells applyTone the vowel cluster begins right after that letter.
-  let consonantPart: string;
-  let consonantLen: number;
-  if (
-    (li === "gi" && lv.startsWith("i")) ||
-    (li === "qu" && lv.startsWith("u"))
-  ) {
-    consonantPart = initial.charAt(0);
-    consonantLen = 1;
-  } else if (li === "gi" || li === "qu") {
-    consonantPart = initial;
-    consonantLen = 2;
-  } else {
-    consonantPart = initial;
-    consonantLen = 0;
-  }
+  // field, emit only the leading consonant letter to avoid doubling it.
+  const consonantPart =
+    (li === "gi" && lv.startsWith("i")) || (li === "qu" && lv.startsWith("u"))
+      ? initial.charAt(0)
+      : initial;
 
-  const body = decodeTelex(consonantPart + vowel + (word.finalConsonant ?? ""));
-  if (!word.tone) return body.normalize("NFC");
-  return applyTone(body, TONES.get(word.tone) ?? "", consonantLen);
+  const decodedConsonant = decodeTelex(consonantPart);
+  const decodedVowel = decodeTelex(vowel);
+  const decodedFinal = decodeTelex(word.finalConsonant ?? "");
+  const body = (decodedConsonant + decodedVowel + decodedFinal).normalize(
+    "NFC",
+  );
+
+  if (!word.tone) return body;
+
+  const combiningMark = TONES.get(word.tone) ?? "";
+  if (!combiningMark) return body;
+
+  const ni = nucleusIndex(decodedVowel.toLowerCase());
+  const nucleusPos = decodedConsonant.length + ni;
+  const before = body.slice(0, nucleusPos);
+  const nucleus = body.charAt(nucleusPos);
+  const after = body.slice(nucleusPos + 1);
+  return (
+    before +
+    (nucleus + combiningMark).normalize("NFC") +
+    after
+  ).normalize("NFC");
 }
 
 /**
