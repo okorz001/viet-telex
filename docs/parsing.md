@@ -114,7 +114,7 @@ Two options in `DecodeOptions` tighten the parse. Both change *when* a token is 
 
 **`strictTones`** honors a tone only at the end of a word. Once a tone has been recorded, any further non-tone letter means the tone was mid-word, so the whole token drops to `INVALID` and passes through unchanged. This is the one rule that can reject a token the moment a letter arrives rather than at `finalize`: `thicsh` decodes to thích by default but stays `thicsh` under `strictTones`, because the `h` after the tone `s` fails immediately.
 
-**`strictWords`** discards just the offending letter when it cannot be placed, and stays in the current state, instead of dropping the whole token to `INVALID`. A token is thus reduced to its largest valid Vietnamese skeleton as it goes: non-Vietnamese letters and invalid finals are trimmed (`fox` → õ, `teas` → té, `odd` → o, `bant` → ban). Because the discarded letter includes the escape character, digraph escapes are not honored under `strictWords` — the digraph simply decodes (`aaa` → â, `ddd` → đ).
+**`strictWords`** discards just the offending letter when it cannot be placed, and stays in the current state, instead of dropping the whole token to `INVALID`. A token is thus reduced to its largest valid Vietnamese skeleton as it goes: non-Vietnamese letters and invalid finals are trimmed (`fox` → õ, `teas` → té, `odd` → o, `bant` → ban), and a letter that would duplicate the implicit gi/qu nucleus is dropped (`gii` → gi). Because a discarded letter includes the escape character, escapes are not honored under `strictWords`: a digraph just decodes (`aaa` → â, `ddd` → đ) and a doubled tone keeps its tone (`ass` → á).
 
 ## From Context To Output
 
@@ -141,7 +141,7 @@ Input | Default | Strict Tones | Strict Words
 `odd` | odd | odd | o
 `ddd` | dd | dd | đ
 `ooo` | oo | oo | oo
-`gii` | gii | gii | gii
+`gii` | gii | gii | gi
 
 ## Worked Examples
 

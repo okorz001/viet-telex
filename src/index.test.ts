@@ -101,6 +101,19 @@ describe("decode", () => {
     ])("%s → %s", ([input, output]) => {
       expect(decode(input)).toBe(output);
     });
+
+    describe("with strictWords option", () => {
+      it.for([
+        ["ass", "á"],
+        ["aff", "à"],
+        ["arr", "ả"],
+        ["axx", "ã"],
+        ["ajj", "ạ"],
+        ["azz", "a"], // z clears the tone, then the doubled z is discarded
+      ])("%s → %s", ([input, output]) => {
+        expect(decode(input, { strictWords: true })).toBe(output);
+      });
+    });
   });
 
   describe("initial consonants are not tones", () => {
@@ -248,8 +261,21 @@ describe("decode", () => {
       ["quas", "quá"],
       ["ques", "qué"],
       ["quyeenr", "quyển"],
+      // gi/qu cannot be followed by their own i/u nucleus → passthrough
+      ["gii", "gii"],
+      ["quu", "quu"],
     ])("%s → %s", ([input, output]) => {
       expect(decode(input)).toBe(output);
+    });
+
+    describe("with strictWords option", () => {
+      it.for([
+        // the duplicate i/u is discarded, leaving the bare initial consonant
+        ["gii", "gi"],
+        ["quu", "qu"],
+      ])("%s → %s", ([input, output]) => {
+        expect(decode(input, { strictWords: true })).toBe(output);
+      });
     });
   });
 

@@ -444,8 +444,10 @@ function parseInitialConsonant(
     };
   }
   // For "gi"/"qu" the trailing i/u is the implicit nucleus. An explicit i (after
-  // "gi") or u (after "qu") would duplicate it, which is not a valid syllable.
+  // "gi") or u (after "qu") would duplicate it, which is not a valid syllable. In
+  // strictWords mode the duplicate letter is discarded, leaving the bare "gi"/"qu".
   if ((ic === "gi" && l === "i") || (ic === "qu" && l === "u")) {
+    if (strictWords) return ctx;
     return { ...ctx, state: "INVALID" };
   }
   // A vowel ends the (possibly empty) initial; reprocess it in the VOWEL state.
@@ -491,6 +493,8 @@ function parseVowel(
   if (TONE_MARKERS.has(l)) {
     const input = ctx.input ?? "";
     if (input.slice(-2, -1).toLowerCase() === l) {
+      // strictWords discards the doubled tone letter, keeping the tone already set.
+      if (strictWords) return ctx;
       const literal = input.slice(0, -2) + input.slice(-1);
       return {
         ...ctx,
@@ -574,6 +578,8 @@ function parseFinalConsonant(
   if (TONE_MARKERS.has(l)) {
     const input = ctx.input ?? "";
     if (input.slice(-2, -1).toLowerCase() === l) {
+      // strictWords discards the doubled tone letter, keeping the tone already set.
+      if (strictWords) return ctx;
       const literal = input.slice(0, -2) + input.slice(-1);
       return {
         ...ctx,
@@ -635,9 +641,13 @@ export interface DecodeOptions {
    * - After decoding, any trailing consonants that do not form a valid
    *   Vietnamese syllable-final sequence (`c`, `ch`, `m`, `n`, `ng`, `nh`,
    *   `p`, `t`, or open syllable) are trimmed.
+   * - A letter that would duplicate the implicit `gi`/`qu` nucleus (the `i` in
+   *   `gii`, the `u` in `quu`) is discarded, leaving the bare initial consonant.
    *
-   * Tone letters (`f`, `j`, `z`) at the end of a word are consumed by the
-   * tone-detection pass before strict rules apply and are never discarded.
+   * A trailing tone letter is consumed as the word's tone rather than discarded,
+   * even when it is not a Vietnamese-alphabet letter (`f`, `j`, `z`). Doubling a
+   * tone letter escapes it; as with a digraph escape, the extra letter is then
+   * discarded (`ass` → `á`).
    *
    * @defaultValue `false`
    */
