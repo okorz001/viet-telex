@@ -39,3 +39,4 @@ All exported symbols must have a full TSDoc comment describing what the function
 
 - [docs/telex.md](docs/telex.md) — Telex encoding rules
 - [docs/vietnamese.md](docs/vietnamese.md) — Vietnamese language and word structure
+- [docs/parsing.md](docs/parsing.md) — Decoder parsing architecture and the state machine

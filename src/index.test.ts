@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { encode, decode } from "./index.js";
 
 // all tests should have a single assertion
-// test names should be either "<input> → <output>"
+// test names should be "<input> → <output>"
 
 describe("decode", () => {
   describe("extended Latin digraphs", () => {
@@ -100,6 +100,19 @@ describe("decode", () => {
       ["azz", "az"],
     ])("%s → %s", ([input, output]) => {
       expect(decode(input)).toBe(output);
+    });
+
+    describe("with strictWords option", () => {
+      it.for([
+        ["ass", "á"],
+        ["aff", "à"],
+        ["arr", "ả"],
+        ["axx", "ã"],
+        ["ajj", "ạ"],
+        ["azz", "a"], // z clears the tone, then the doubled z is discarded
+      ])("%s → %s", ([input, output]) => {
+        expect(decode(input, { strictWords: true })).toBe(output);
+      });
     });
   });
 
@@ -212,7 +225,7 @@ describe("decode", () => {
           ["fox", "õ"],
           ["jar", "ả"],
           ["war", "ả"],
-          ["zero", "ẻ"],
+          ["zero", "ẻo"],
           ["show", "sơ"],
         ])("%s → %s", ([input, output]) => {
           expect(decode(input, { strictWords: true })).toBe(output);
@@ -248,8 +261,22 @@ describe("decode", () => {
       ["quas", "quá"],
       ["ques", "qué"],
       ["quyeenr", "quyển"],
+      // gi/qu cannot be followed by their own i/u nucleus → passthrough
+      ["giif", "giif"],
+      ["quuf", "quuf"],
     ])("%s → %s", ([input, output]) => {
       expect(decode(input)).toBe(output);
+    });
+
+    describe("with strictWords option", () => {
+      it.for([
+        // the duplicate i/u is discarded, leaving the bare initial consonant,
+        // to which the trailing tone letter then applies
+        ["giif", "gì"],
+        ["quuf", "qù"],
+      ])("%s → %s", ([input, output]) => {
+        expect(decode(input, { strictWords: true })).toBe(output);
+      });
     });
   });
 
