@@ -624,39 +624,39 @@ function finalize(ctx: ParseContext): string {
 }
 
 /**
- * Options for {@link decode}.
+ * Options for {@link decode}. All fields are optional and default to `false`,
+ * giving fully lenient decoding. Pass this object as the second argument to
+ * {@link decode} to tighten which inputs are recognized as Vietnamese.
  */
 export interface DecodeOptions {
   /**
-   * When `true`, enables strict Vietnamese word validation:
+   * When `true`, reduces each token to its largest valid Vietnamese skeleton
+   * rather than passing unrecognized tokens through unchanged:
    *
-   * - ASCII characters not in the Vietnamese 29-letter alphabet (e.g. `f`, `j`,
-   *   `w`, `z`) are silently discarded from the output.
-   * - Digraph escape sequences (e.g. `ooo`→`oo`) are only honored when the
-   *   escaped pair is a recognized Vietnamese vowel cluster (one of `a`, `aw`,
-   *   `aa`, `e`, `ee`, `i`, `o`, `oo`, `ow`, `u`, `uw`, `uo`);
-   *   otherwise the digraph is decoded normally and the trailing escape character
-   *   is subject to the same discarding rule above. Of the seven Telex digraphs,
-   *   only the `oo` escape produces a valid Vietnamese sequence and is honored.
-   * - After decoding, any trailing consonants that do not form a valid
-   *   Vietnamese syllable-final sequence (`c`, `ch`, `m`, `n`, `ng`, `nh`,
-   *   `p`, `t`, or open syllable) are trimmed.
+   * - A letter that cannot be placed at the current parse position is silently
+   *   discarded and parsing continues, rather than marking the whole token
+   *   invalid (e.g. `fox`→`õ`, `show`→`sơ`, `odd`→`o`, `bant`→`ban`).
+   * - Digraph escape sequences are not honored; the escape character is discarded
+   *   and the digraph decodes normally (e.g. `aaa`→`â`, `uww`→`ư`). The sole
+   *   exception is `oo`: `ooo` still decodes to `oo` because `oo` is itself a
+   *   valid Vietnamese nucleus (the loanword vowel in `xoong`).
+   * - A letter that cannot extend the current final-consonant cluster is
+   *   discarded, leaving only the valid portion (e.g. `odd`→`o`, `bant`→`ban`).
    * - A letter that would duplicate the implicit `gi`/`qu` nucleus (the `i` in
    *   `gii`, the `u` in `quu`) is discarded, leaving the bare initial consonant.
    *
-   * A trailing tone letter is consumed as the word's tone rather than discarded,
-   * even when it is not a Vietnamese-alphabet letter (`f`, `j`, `z`). Doubling a
-   * tone letter escapes it; as with a digraph escape, the extra letter is then
-   * discarded (`ass` → `á`).
+   * A tone letter following the vowel is consumed as the word's tone rather than
+   * discarded, even when it is not a Vietnamese-alphabet letter (`f`, `j`, `z`).
+   * Doubling a tone letter escapes it; as with a digraph escape, the extra letter
+   * is then discarded (`ass`→`á`).
    *
    * @defaultValue `false`
    */
   strictWords?: boolean;
   /**
    * When `true`, tone mark letters (`f`, `j`, `r`, `s`, `x`, `z`) are only
-   * allowed at the end of a word. A tone letter appearing mid-word after a
-   * vowel will cause the word to fail the Vietnamese syllable check and be
-   * returned as-is.
+   * honored at the end of a word. A tone letter appearing mid-word causes the
+   * token to be treated as non-Vietnamese and returned unchanged.
    *
    * When `false` (the default), tone mark letters are allowed anywhere in the
    * input after a vowel, so inputs like `mafu` decode as `màu` even though the
@@ -679,12 +679,13 @@ export interface DecodeOptions {
  * Within each word:
  * - Digraphs (`aw`→ă, `aa`→â, `dd`→đ, `ee`→ê, `oo`→ô, `ow`→ơ, `uw`→ư) are
  *   replaced with their Vietnamese letter, preserving the case of the first character.
- * - A tone letter at the end of the word (`s` sắc, `f` huyền, `r` hỏi, `x` ngã,
+ * - A tone letter following the vowel (`s` sắc, `f` huyền, `r` hỏi, `x` ngã,
  *   `j` nặng, `z` ngang) is consumed and the corresponding diacritic is placed on
  *   the nucleus vowel of the syllable. When multiple tone letters appear, the last
  *   one wins; `z` removes any previously specified tone.
  * - Doubling the second character of a digraph or tone letter escapes it, producing
  *   the literal characters instead (e.g. `ooo`→`oo`, `catss`→`cats`).
+ * - Tokens that do not form a valid Vietnamese syllable pass through unchanged.
  *
  * @param text - ASCII text using Telex encoding
  * @param options - Optional decoding options; see {@link DecodeOptions}
