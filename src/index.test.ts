@@ -262,17 +262,18 @@ describe("decode", () => {
       ["ques", "qué"],
       ["quyeenr", "quyển"],
       // gi/qu cannot be followed by their own i/u nucleus → passthrough
-      ["gii", "gii"],
-      ["quu", "quu"],
+      ["giif", "giif"],
+      ["quuf", "quuf"],
     ])("%s → %s", ([input, output]) => {
       expect(decode(input)).toBe(output);
     });
 
     describe("with strictWords option", () => {
       it.for([
-        // the duplicate i/u is discarded, leaving the bare initial consonant
-        ["gii", "gi"],
-        ["quu", "qu"],
+        // the duplicate i/u is discarded, leaving the bare initial consonant,
+        // to which the trailing tone letter then applies
+        ["giif", "gì"],
+        ["quuf", "qù"],
       ])("%s → %s", ([input, output]) => {
         expect(decode(input, { strictWords: true })).toBe(output);
       });
