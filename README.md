@@ -7,7 +7,28 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 ## Features
 
 - **Decode**: convert Telex basic Latin input into proper Vietnamese text
+
+  ```ts
+  import { decode } from "viet-telex";
+
+  decode("phowr"); // "phở"
+  decode("Xin chaof"); // "Xin chào"
+
+  // Non-Vietnamese words pass through unchanged
+  decode("show me the banhs mif"); // "show me the bánh mì"
+  ```
+
 - **Encode**: convert proper Vietnamese text back into Telex basic Latin
+
+  ```ts
+  import { encode } from "viet-telex";
+
+  encode("phở"); // "phowr"
+  encode("Xin chào"); // "Xin chaof"
+
+  // decode and encode are inverses
+  decode(encode(text)) === text; // true for any Vietnamese text
+  ```
 
 ## API
 
