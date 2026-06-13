@@ -93,6 +93,36 @@ Tone marks are placed on the third letter of the following:
 
 > uyê
 
+### Old-Style Placement (Kiểu Cũ)
+
+The old style applies the following rules in order:
+
+1. If the vowel cluster contains any extended-diacritic vowel (ă â ê ô ơ ư), place the mark on the last such letter.
+2. Otherwise, let the "rhyme" = vowel cluster + final consonant. Find the center index of the rhyme (i.e. `(length − 1) / 2`). Place the mark on the vowel letter in the cluster closest to that index; if two vowels are equidistant, choose the first.
+
+Examples where new and old style differ:
+
+New Style | Old Style | Vowel | Final
+--- | --- | --- | ---
+hoá | hóa | oa | (none)
+oé | óe | oe | (none)
+uý | úy | uy | (none)
+
+Examples where new and old style agree (extended vowel present):
+
+New Style | Old Style | Vowel | Final
+--- | --- | --- | ---
+uế | uế | uê | (none)
+iế | iế | iê | (none)
+ướ | ướ | ươ | (none)
+
+Examples where new and old style agree (center of rhyme lands on same vowel):
+
+New Style | Old Style | Vowel | Final
+--- | --- | --- | ---
+toàn | toàn | oa | n
+buýt | buýt | uy | t
+
 ## "gi-" & "qu-" Spelling Rules
 
 "gi" and "qu" are consonant digraphs, even though "i" and "u" are individually vowels. This allows the construction of words that appear to contain invalid vowel clusters.
