@@ -4,6 +4,10 @@ A TypeScript module for Telex encoding of Vietnamese text.
 
 Vietnamese requires diacritical marks to distinguish letters and indicate tone. Telex represents these marks using basic Latin letters, making Vietnamese text typeable on the common QWERTY keyboard.
 
+## Demo
+
+Try the latest build in your browser with the [live demo](https://okorz001.github.io/viet-telex/).
+
 ## Features
 
 - **Decode**: convert Telex basic Latin input into proper Vietnamese text
@@ -37,7 +41,7 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 
 ## API
 
-[Typedoc](https://okorz001.github.io/viet-telex/) is published after every build.
+[Typedoc](https://okorz001.github.io/viet-telex/docs/) is published after every build.
 
 ## Development
 

@@ -5,4 +5,8 @@ export default {
       allow: [".."],
     },
   },
+  build: {
+    outDir: "../site",
+    emptyOutDir: false,
+  },
 };

@@ -1,6 +1,6 @@
 {
   "entryPoints": ["src/index.ts"],
-  "out": "site",
+  "out": "site/docs",
   "name": "viet-telex",
   "readme": "none",
   "navigationLinks": {
