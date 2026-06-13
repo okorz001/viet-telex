@@ -142,6 +142,33 @@ function nucleusIndex(cluster: string): number {
   return cluster.length - 1;
 }
 
+// Old-style (kiểu cũ) tone index: find the index within the decoded vowel
+// (lowercase) where the tone mark should be placed.
+//
+// Rules (applied in order):
+//   1. If any extended vowel letter (ăâêôơư) is present, use the last one.
+//   2. Otherwise find the center of the rhyme (vowel + finalConsonant) and
+//      pick the vowel letter closest to it; ties go to the lower index.
+function toneIndexOld(vowel: string, finalConsonant: string): number {
+  const extended = "ăâêôơư";
+  for (let i = vowel.length - 1; i >= 0; i--) {
+    if (extended.includes(vowel.charAt(i))) return i;
+  }
+  const rhymeLength = vowel.length + finalConsonant.length;
+  const center = (rhymeLength - 1) / 2;
+  let bestIndex = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < vowel.length; i++) {
+    if (!VOWELS.has(vowel.charAt(i))) continue;
+    const dist = Math.abs(i - center);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestIndex = i;
+    }
+  }
+  return bestIndex;
+}
+
 /**
  * A parsed Vietnamese syllable with each part stored in its Telex (encoded) form
  * rather than decoded Unicode. Telex keeps parsing cheap — escapes are just a
@@ -209,7 +236,7 @@ function decodeTelex(s: string): string {
  * @param word - A parsed syllable with Telex-encoded parts; see {@link Word}
  * @returns The syllable as Unicode Vietnamese text in NFC form
  */
-function render(word: Word): string {
+function render(word: Word, options?: DecodeOptions): string {
   const initial = word.initialConsonant ?? "";
   const vowel = word.vowel ?? "";
   const li = initial.toLowerCase();
@@ -234,7 +261,12 @@ function render(word: Word): string {
   const combiningMark = TONES.get(word.tone) ?? "";
   if (!combiningMark) return body;
 
-  const ni = nucleusIndex(decodedVowel.toLowerCase());
+  const dlv = decodedVowel.toLowerCase();
+  const lf = decodedFinal.toLowerCase();
+  const ni =
+    options?.tonePlacement === "old"
+      ? toneIndexOld(dlv, lf)
+      : nucleusIndex(dlv);
   const nucleusPos = decodedConsonant.length + ni;
   const before = body.slice(0, nucleusPos);
   const nucleus = body.charAt(nucleusPos);
@@ -550,18 +582,17 @@ function parseFinalConsonant(
 // Renders a fully-parsed context to output text. An escaped token returns its
 // pre-resolved `decoded` literal; an INVALID parse, or a structurally invalid
 // word, passes through as the raw input; a valid word is rendered from its Word parts.
-function finalize(ctx: ParseContext): string {
+function finalize(ctx: ParseContext, options?: DecodeOptions): string {
   const input = ctx.input ?? "";
   if (ctx.decoded !== undefined) return ctx.decoded;
   if (ctx.state === "INVALID") return input;
   if (!validate(ctx)) return input;
-  return render(ctx);
+  return render(ctx, options);
 }
 
 /**
- * Options for {@link decode}. All fields are optional and default to `false`,
- * giving fully lenient decoding. Pass this object as the second argument to
- * {@link decode} to tighten which inputs are recognized as Vietnamese.
+ * Options for {@link decode}. All fields are optional. Pass this object as
+ * the second argument to {@link decode} to control decoding behavior.
  */
 export interface DecodeOptions {
   /**
@@ -603,6 +634,24 @@ export interface DecodeOptions {
    * @defaultValue `false`
    */
   strictTones?: boolean;
+  /**
+   * Controls which convention is used for placing tone marks on compound vowel
+   * clusters.
+   *
+   * - `"new"` (default) uses the new-style (kiểu mới) rules described in
+   *   docs/vietnamese.md: the mark is placed on the phonetically prominent
+   *   nucleus vowel (e.g. `hoas` → hoá, mark on `a`).
+   * - `"old"` uses the old-style (kiểu cũ) rules: if the vowel cluster
+   *   contains an extended-diacritic vowel (ă â ê ô ơ ư), the mark goes on
+   *   the last such letter; otherwise it goes on the vowel closest to the
+   *   center of the rhyme (vowel + final consonant), with ties broken toward
+   *   the first vowel (e.g. `hoas` → hóa, mark on `o`).
+   *
+   * This option only affects rendering; parsing is identical for both styles.
+   *
+   * @defaultValue `"new"`
+   */
+  tonePlacement?: "new" | "old";
 }
 
 /**
@@ -633,7 +682,7 @@ export function decode(text: string, options?: DecodeOptions): string {
       if (!token || /[^a-zA-Z]/.test(token)) return token;
       let ctx: ParseContext = {};
       for (const ch of token) ctx = parse(ctx, ch, options);
-      return finalize(ctx);
+      return finalize(ctx, options);
     })
     .join("");
 }

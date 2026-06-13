@@ -155,6 +155,12 @@
       <div id="controls">
         <label><input type="checkbox" id="strictWords" /> strict words</label>
         <label><input type="checkbox" id="strictTones" /> strict tones</label>
+        <label>tone placement
+          <select id="tonePlacement">
+            <option value="new">new</option>
+            <option value="old">old</option>
+          </select>
+        </label>
       </div>
       <div id="panes">
         <div class="pane">
@@ -173,17 +179,20 @@
       const output = document.getElementById("output");
       const strictWords = document.getElementById("strictWords");
       const strictTones = document.getElementById("strictTones");
+      const tonePlacement = document.getElementById("tonePlacement");
 
       function update() {
         output.textContent = decode(input.value, {
           strictWords: strictWords.checked,
           strictTones: strictTones.checked,
+          tonePlacement: tonePlacement.value,
         });
       }
 
       input.addEventListener("input", update);
       strictWords.addEventListener("change", update);
       strictTones.addEventListener("change", update);
+      tonePlacement.addEventListener("change", update);
     </script>
   </body>
 </html>
