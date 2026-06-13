@@ -301,6 +301,46 @@ describe("decode", () => {
       });
     });
   });
+
+  describe("tonePlacement: old", () => {
+    describe("differs from new style: no extended vowel, open cluster", () => {
+      it.for([
+        // oa with no final: old → mark on first vowel 'o'
+        ["hoas", "hóa"],
+        ["oas", "óa"],
+        // oe with no final: old → mark on 'o'
+        ["oes", "óe"],
+        // uy with no final: old → mark on 'u' (equidistant, first wins)
+        ["uys", "úy"],
+      ])("%s → %s", ([input, output]) => {
+        expect(decode(input, { tonePlacement: "old" })).toBe(output);
+      });
+    });
+
+    describe("same as new style: extended vowel takes precedence", () => {
+      it.for([
+        // uê: extended 'ê' wins → mark on 'ê'
+        ["uees", "uế"],
+        // iê: extended 'ê' wins → mark on 'ê'
+        ["iees", "iế"],
+        // ươ: both extended, last ('ơ') wins → mark on 'ơ'
+        ["uwows", "ướ"],
+      ])("%s → %s", ([input, output]) => {
+        expect(decode(input, { tonePlacement: "old" })).toBe(output);
+      });
+    });
+
+    describe("same as new style: center-of-rhyme picks same vowel", () => {
+      it.for([
+        // oa + n: rhyme center lands on 'a'
+        ["toanf", "toàn"],
+        // uy + t: rhyme center lands on 'y'
+        ["buyts", "buýt"],
+      ])("%s → %s", ([input, output]) => {
+        expect(decode(input, { tonePlacement: "old" })).toBe(output);
+      });
+    });
+  });
 });
 
 describe("encode", () => {
