@@ -6,7 +6,7 @@ Vietnamese requires diacritical marks to distinguish letters and indicate tone. 
 
 ## Demo
 
-[https://okorz001.github.io/viet-telex/](https://okorz001.github.io/viet-telex/)
+Try the latest build in your browser with the [live demo](https://okorz001.github.io/viet-telex/).
 
 ## Features
 
