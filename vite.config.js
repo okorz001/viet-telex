@@ -1,5 +1,6 @@
-export default {
+export default ({ command }) => ({
   root: "demo",
+  base: command === "build" ? "/viet-telex/" : "/",
   server: {
     fs: {
       allow: [".."],
@@ -9,4 +10,4 @@ export default {
     outDir: "../site",
     emptyOutDir: false,
   },
-};
+});
