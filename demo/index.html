@@ -142,26 +142,24 @@
         }
       }
 
-      #guide {
+      #guide-wrap {
         margin-top: 1.25rem;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 0.5rem;
-        padding: 0.6rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
       }
 
-      #guide summary {
-        cursor: pointer;
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: #475569;
-        user-select: none;
+      #guide {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
       }
 
       #guide-tables {
         display: flex;
         flex-wrap: wrap;
+        justify-content: center;
         gap: 1.5rem 3rem;
-        margin-top: 0.75rem;
       }
 
       .guide-section h3 {
@@ -239,45 +237,47 @@
           <div id="output"></div>
         </div>
       </div>
-      <details id="guide">
-        <summary>Telex Input Guide</summary>
-        <div id="guide-tables">
-          <div class="guide-section">
-            <h3>Extended Letters</h3>
-            <table>
-              <thead>
-                <tr><th>Input</th><th>Output</th></tr>
-              </thead>
-              <tbody>
-                <tr><td><code>aw</code></td><td>ă</td></tr>
-                <tr><td><code>aa</code></td><td>â</td></tr>
-                <tr><td><code>dd</code></td><td>đ</td></tr>
-                <tr><td><code>ee</code></td><td>ê</td></tr>
-                <tr><td><code>oo</code></td><td>ô</td></tr>
-                <tr><td><code>ow</code></td><td>ơ</td></tr>
-                <tr><td><code>uw</code></td><td>ư</td></tr>
-              </tbody>
-            </table>
+      <div id="guide-wrap">
+        <div class="pane-label">Guide</div>
+        <div id="guide">
+          <div id="guide-tables">
+            <div class="guide-section">
+              <h3>Extended Letters</h3>
+              <table>
+                <thead>
+                  <tr><th>Input</th><th>Output</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>aw</code></td><td>ă</td></tr>
+                  <tr><td><code>aa</code></td><td>â</td></tr>
+                  <tr><td><code>dd</code></td><td>đ</td></tr>
+                  <tr><td><code>ee</code></td><td>ê</td></tr>
+                  <tr><td><code>oo</code></td><td>ô</td></tr>
+                  <tr><td><code>ow</code></td><td>ơ</td></tr>
+                  <tr><td><code>uw</code></td><td>ư</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="guide-section">
+              <h3>Tone Marks</h3>
+              <table>
+                <thead>
+                  <tr><th>Key</th><th>Example</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>s</code></td><td><code>mas</code> → má</td></tr>
+                  <tr><td><code>f</code></td><td><code>maf</code> → mà</td></tr>
+                  <tr><td><code>r</code></td><td><code>mar</code> → mả</td></tr>
+                  <tr><td><code>x</code></td><td><code>max</code> → mã</td></tr>
+                  <tr><td><code>j</code></td><td><code>maj</code> → mạ</td></tr>
+                  <tr><td><code>z</code></td><td><code>maz</code> → ma</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div class="guide-section">
-            <h3>Tone Marks</h3>
-            <table>
-              <thead>
-                <tr><th>Key</th><th>Example</th></tr>
-              </thead>
-              <tbody>
-                <tr><td><code>s</code></td><td><code>mas</code> → má</td></tr>
-                <tr><td><code>f</code></td><td><code>maf</code> → mà</td></tr>
-                <tr><td><code>r</code></td><td><code>mar</code> → mả</td></tr>
-                <tr><td><code>x</code></td><td><code>max</code> → mã</td></tr>
-                <tr><td><code>j</code></td><td><code>maj</code> → mạ</td></tr>
-                <tr><td><code>z</code></td><td><code>maz</code> → ma</td></tr>
-              </tbody>
-            </table>
-          </div>
+          <p class="guide-note">Repeat a key to escape it: <code>ooo</code> → oo, <code>catss</code> → cats.</p>
         </div>
-        <p class="guide-note">Repeat a key to escape it: <code>ooo</code> → oo, <code>catss</code> → cats.</p>
-      </details>
+      </div>
     </main>
     <script type="module" src="./main.ts"></script>
   </body>
