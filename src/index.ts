@@ -175,7 +175,7 @@ function toneIndexOld(vowel: string, finalConsonant: string): number {
  * doubled character (e.g. `dd` for đ, `uaa` for uâ) — and keeps the model easy to
  * read when logging. {@link render} decodes it to Unicode.
  */
-interface Word {
+export interface Word {
   /** Initial consonant in Telex, e.g. `b`, `dd` (đ), `ng`, `qu`. */
   initialConsonant?: string;
   /** Vowel cluster in Telex, e.g. `a`, `uw` (ư), `uaa` (uâ). */
@@ -189,11 +189,17 @@ interface Word {
   tone?: string;
 }
 
-// Decodes Telex digraphs (aw→ă, aa→â, dd→đ, ee→ê, oo→ô, ow→ơ, uw→ư) within a
-// string, preserving the case of the first character. A doubled second character
-// escapes the digraph, yielding the two literal characters (e.g. "ooo"→"oo",
-// "aww"→"aw"). Other characters pass through unchanged.
-function decodeTelex(s: string): string {
+/**
+ * Decodes Telex digraphs (`aw`→ă, `aa`→â, `dd`→đ, `ee`→ê, `oo`→ô, `ow`→ơ,
+ * `uw`→ư) within a string, preserving the case of the first character of each
+ * digraph. A doubled second character escapes the digraph, yielding the two
+ * literal characters instead (e.g. `"ooo"`→`"oo"`, `"aww"`→`"aw"`). Other
+ * characters pass through unchanged.
+ *
+ * @param s - ASCII text that may contain Telex digraphs
+ * @returns The string with all recognized digraphs replaced by their Unicode equivalents
+ */
+export function decodeTelex(s: string): string {
   let result = "";
   let i = 0;
   while (i < s.length) {
@@ -300,7 +306,7 @@ function render(word: Word, options?: DecodeOptions): string {
  * @param word - A parsed syllable with Telex-encoded parts; see {@link Word}
  * @returns `true` if the syllable is structurally valid Vietnamese
  */
-function validate(word: Word): boolean {
+export function validate(word: Word): boolean {
   const initial = (word.initialConsonant ?? "").toLowerCase();
   if (initial !== "" && !INITIAL_CONSONANTS.includes(initial)) return false;
 
@@ -322,17 +328,25 @@ function validate(word: Word): boolean {
   return prefix !== "" && NUCLEI.has(prefix + vowel);
 }
 
-// The four states of the syllable parser. A Vietnamese syllable is walked in
-// order: an optional initial consonant, the vowel cluster, then an optional
-// final consonant. INVALID is terminal — the buffered letters cannot form a
-// structurally valid Vietnamese syllable.
-type ParseState = "INITIAL_CONSONANT" | "VOWEL" | "FINAL_CONSONANT" | "INVALID";
+/**
+ * The four states of the syllable parser. A Vietnamese syllable is walked in
+ * order: an optional initial consonant, the vowel cluster, then an optional
+ * final consonant. `INVALID` is terminal — the buffered letters cannot form a
+ * structurally valid Vietnamese syllable.
+ */
+export type ParseState =
+  | "INITIAL_CONSONANT"
+  | "VOWEL"
+  | "FINAL_CONSONANT"
+  | "INVALID";
 
-// The evolving state of the parse reducer as it walks a word one letter at a
-// time. A context is a Word in progress — the Telex-encoded syllable parts
-// recognized so far — plus the machine state and the raw input consumed.
-// state and input are optional so an empty {} is a valid starting context.
-interface ParseContext extends Word {
+/**
+ * The evolving state of the parse reducer as it walks a word one letter at a
+ * time. A `ParseContext` is a {@link Word} in progress — the Telex-encoded
+ * syllable parts recognized so far — plus the machine state and the raw input
+ * consumed. All fields are optional; pass `{}` to start a fresh syllable.
+ */
+export interface ParseContext extends Word {
   /**
    * The parser's current position in the syllable; see {@link ParseState}.
    * Absent on a fresh context — {@link parse} defaults it to `INITIAL_CONSONANT`.
@@ -353,7 +367,20 @@ interface ParseContext extends Word {
   decoded?: string;
 }
 
-function parse(
+/**
+ * Advances the syllable parser by one letter, returning an updated context.
+ *
+ * The parser is a pure reducer: it takes the current {@link ParseContext} and a
+ * single input character and returns a new context with updated parse state and
+ * syllable parts. Pass `{}` to start a fresh syllable; `state` defaults to
+ * `INITIAL_CONSONANT` and `input` defaults to `""`.
+ *
+ * @param ctx - The current parse context; pass `{}` to start a new syllable
+ * @param letter - The next character from the input token (any case)
+ * @param options - Optional decoding options controlling escape and tone behavior
+ * @returns A new context reflecting the updated parse state after consuming `letter`
+ */
+export function parse(
   ctx: ParseContext,
   letter: string,
   options?: DecodeOptions,
