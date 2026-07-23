@@ -24,11 +24,12 @@ describe("dictionary round-trip", () => {
     .map((line) => line.trim().normalize("NFC"))
     .filter((word) => word.length > 0 && !SKIP_LIST.has(word));
 
-  // Tone mark placement (docs/vietnamese.md) is ambiguous for some vowel
-  // clusters, and the dictionary itself is not consistent about which
-  // convention it uses. Old-style is checked first since it's the more
-  // common convention in this dictionary; a word round-trips if either
-  // convention reproduces it exactly.
+  // Old-style vs. new-style tone mark placement (docs/vietnamese.md) is
+  // deterministic, not ambiguous — but this dictionary is a data quality
+  // problem: it's inconsistent about which convention individual entries
+  // use. Old-style is checked first since it's the more common convention
+  // in this dictionary; a word round-trips if either convention reproduces
+  // it exactly.
   it(`decode(encode(word)) === word for all ${words.length} dictionary entries, trying old- and new-style tone placement`, () => {
     const failures = words
       .map((word) => {
