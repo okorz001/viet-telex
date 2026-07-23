@@ -176,6 +176,7 @@ describe("decode", () => {
       ["uwowis", "ưới"],
       ["uwowus", "ướu"],
       ["uwus", "ứu"],
+      ["yees", "yế"],
       ["yeeus", "yếu"],
     ])("%s → %s", ([input, output]) => {
       expect(decode(input)).toBe(output);

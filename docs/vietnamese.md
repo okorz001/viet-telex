@@ -56,7 +56,7 @@ These may be used with a final consonant:
 
 These must be used with a final consonant:
 
-> iê oă oo uâ uô uyê ươ
+> iê oă oo uâ uô uyê ươ yê
 
 Any other combinations of vowels is invalid.
 
@@ -87,7 +87,7 @@ Tone marks are placed on the first letter of the following:
 
 Tone marks are placed on the second letter of the following:
 
-> iê iêu oa oai oao oay oă oe oeo oo uâ uây uê uô uôi uy uya uyu ươ ươi ươu yêu
+> iê iêu oa oai oao oay oă oe oeo oo uâ uây uê uô uôi uy uya uyu ươ ươi ươu yê yêu
 
 Tone marks are placed on the third letter of the following:
 
