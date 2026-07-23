@@ -7,10 +7,18 @@ import { decode, encode } from "./index.js";
 // Do not add an entry here without first checking docs/vietnamese.md and
 // whether the failure is actually fixable in NUCLEI / *_CONSONANTS (see the
 // #58/#59 precedent).
-const SKIP_LIST = new Set<string>([]);
+const SKIP_LIST = new Set<string>([
+  "Blowing dust and wind.", // not Vietnamese; junk entry in the source data
+  "hắc buá", // source typo, tone mark on wrong vowel (should be "hắc búa")
+  "hết viá", // source typo, tone mark on wrong vowel (should be "hết vía")
+  "kịch muá", // source typo, tone mark on wrong vowel (should be "kịch múa")
+  "ngư tiêù", // source typo, tone mark on wrong vowel (should be "ngư tiều")
+  "hũu sản", // source typo, tone mark on wrong vowel (should be "hữu sản")
+]);
 
 describe("dictionary round-trip", () => {
   const path = new URL("../data/Viet22K.txt", import.meta.url);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- path is a fixed, hardcoded relative fixture path, not external input
   const words = readFileSync(path, "utf-8")
     .split("\n")
     .map((line) => line.trim().normalize("NFC"))
