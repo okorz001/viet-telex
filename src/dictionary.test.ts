@@ -13,7 +13,7 @@ const SKIP_LIST = new Set<string>([
   "hết viá", // source typo, tone mark on wrong vowel (should be "hết vía")
   "kịch muá", // source typo, tone mark on wrong vowel (should be "kịch múa")
   "ngư tiêù", // source typo, tone mark on wrong vowel (should be "ngư tiều")
-  "hũu sản", // source typo, tone mark on wrong vowel (should be "hữu sản")
+  "hũu sản", // source typo, "u" instead of "ư" (should be "hữu sản")
 ]);
 
 describe("dictionary round-trip", () => {
