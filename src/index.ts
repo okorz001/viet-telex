@@ -98,6 +98,7 @@ const NUCLEI: Map<string, number> = new Map([
   ["uê", 1],
   ["uô", 1],
   ["uôi", 1],
+  ["uơ", 1],
   ["uy", 1],
   ["uya", 1],
   ["uyu", 1],

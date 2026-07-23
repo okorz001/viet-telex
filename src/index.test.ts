@@ -166,6 +166,7 @@ describe("decode", () => {
       ["uis", "úi"],
       ["uoos", "uố"],
       ["uoois", "uối"],
+      ["uows", "uớ"],
       ["uys", "uý"],
       ["uyas", "uýa"],
       ["uyees", "uyế"],
