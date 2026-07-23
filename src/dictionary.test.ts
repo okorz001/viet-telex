@@ -10,7 +10,7 @@ import { decode, encode } from "./index.js";
 const SKIP_LIST = new Set<string>([]);
 
 describe("dictionary round-trip", () => {
-  const path = new URL("../data/dictionary.txt", import.meta.url);
+  const path = new URL("../data/Viet22K.txt", import.meta.url);
   const words = readFileSync(path, "utf-8")
     .split("\n")
     .map((line) => line.trim().normalize("NFC"))
