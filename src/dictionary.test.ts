@@ -17,9 +17,7 @@ const SKIP_LIST = new Set<string>([
 ]);
 
 describe("dictionary round-trip", () => {
-  const path = new URL("../data/Viet22K.txt", import.meta.url);
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- path is a fixed, hardcoded relative fixture path, not external input
-  const words = readFileSync(path, "utf-8")
+  const words = readFileSync("data/Viet22K.txt", "utf-8")
     .split("\n")
     .map((line) => line.trim().normalize("NFC"))
     .filter((word) => word.length > 0 && !SKIP_LIST.has(word));
