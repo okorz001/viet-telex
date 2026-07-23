@@ -10,6 +10,11 @@ const SKIP_LIST = new Set<string>([
   "kịch muá", // source typo, tone mark on wrong vowel (should be "kịch múa")
   "ngư tiêù", // source typo, tone mark on wrong vowel (should be "ngư tiều")
   "hũu sản", // source typo, "u" instead of "ư" (should be "hữu sản")
+  "hình thức chủ nghiã", // source typo, tone mark on wrong vowel (should be "nghĩa")
+  "chòong", // tone mark position doesn't match old or new style
+  "gòong", // tone mark position doesn't match old or new style
+  "loã xõa", // mixes old and new style tone placement within the phrase
+  "oẻ họe", // mixes old and new style tone placement within the phrase
 ]);
 
 describe("dictionary round-trip", () => {
