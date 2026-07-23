@@ -39,6 +39,8 @@ Try the latest build in your browser with the [live demo](https://okorz001.githu
   decode(encode(text)) === text; // true for any Vietnamese text
   ```
 
+Encode and decode round-trips are tested against a dictionary of 22,000+ Vietnamese words.
+
 ## API
 
 [Typedoc](https://okorz001.github.io/viet-telex/docs/) is published after every build.
