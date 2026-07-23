@@ -98,12 +98,14 @@ const NUCLEI: Map<string, number> = new Map([
   ["uê", 1],
   ["uô", 1],
   ["uôi", 1],
+  ["uơ", 1],
   ["uy", 1],
   ["uya", 1],
   ["uyu", 1],
   ["ươ", 1],
   ["ươi", 1],
   ["ươu", 1],
+  ["yê", 1],
   ["yêu", 1],
   // nucleus at index 2
   ["uyê", 2],
@@ -756,12 +758,6 @@ function encodeWord(word: string): string {
       continue;
     }
 
-    // Skip other combining marks (e.g. circumflex, breve that form extended letters)
-    if (ch >= "̀" && ch <= "ͯ") {
-      i++;
-      continue;
-    }
-
     const lower = ch.toLowerCase();
     const isUpper = ch !== lower && ch === ch.toUpperCase();
 
@@ -775,14 +771,38 @@ function encodeWord(word: string): string {
     //   ơ → o + ̛ (horn)
     //   ư → u + ̛
     //   đ → đ (does not decompose further)
-    const next = nfd.charAt(i + 1);
+    //
+    // A tone mark (e.g. nặng's dot-below) may also be attached to the same
+    // base letter. Canonical NFD ordering sorts combining marks by combining
+    // class, so the tone mark can land *before* the circumflex/breve/horn
+    // (e.g. "ệ".normalize("NFD") is e + dot-below + circumflex). Scan all
+    // combining marks following the base letter — in whichever order — so
+    // the modifier is found regardless of the tone mark's position.
+    let modifier: string | null = null;
+    let j = i + 1;
+    while (j < nfd.length) {
+      const mark = nfd.charAt(j);
+      const markTone = ENCODE_TONE.get(mark);
+      if (markTone !== undefined) {
+        toneChar = markTone;
+        j++;
+        continue;
+      }
+      if (mark === "̆" || mark === "̂" || mark === "̛") {
+        modifier = mark;
+        j++;
+        continue;
+      }
+      break;
+    }
+
     const digraphKey = (() => {
-      if (lower === "a" && next === "̆") return "aw"; // ă
-      if (lower === "a" && next === "̂") return "aa"; // â
-      if (lower === "e" && next === "̂") return "ee"; // ê
-      if (lower === "o" && next === "̂") return "oo"; // ô
-      if (lower === "o" && next === "̛") return "ow"; // ơ
-      if (lower === "u" && next === "̛") return "uw"; // ư
+      if (lower === "a" && modifier === "̆") return "aw"; // ă
+      if (lower === "a" && modifier === "̂") return "aa"; // â
+      if (lower === "e" && modifier === "̂") return "ee"; // ê
+      if (lower === "o" && modifier === "̂") return "oo"; // ô
+      if (lower === "o" && modifier === "̛") return "ow"; // ơ
+      if (lower === "u" && modifier === "̛") return "uw"; // ư
       return null;
     })();
 
@@ -798,7 +818,7 @@ function encodeWord(word: string): string {
         ? digraphKey[0].toUpperCase() + digraphKey[1]
         : digraphKey;
       contextChar = ""; // decode consumes the digraph atomically
-      i += 2; // consume base + modifier
+      i = j; // consume base + all combining marks attached to it
       continue;
     }
 
@@ -812,7 +832,7 @@ function encodeWord(word: string): string {
     }
     result += ch;
     if (needsEscape) result += lower; // lowercase escape follows the actual char
-    i++;
+    i = j; // consume base + any tone mark(s) attached to it
   }
 
   // Escape a trailing tone marker so decode won't misinterpret it as a tone.

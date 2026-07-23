@@ -48,7 +48,7 @@ Vietnamese also has many diphthongs and triphthongs. They can be divided into th
 
 These are never used with a final consonant:
 
-> ai ao au ay âu ây eo êu ia iêu iu oai oao oay oeo oi ôi ơi ua uây ui uôi uya uyu ưa ưi ươi ươu ưu yêu
+> ai ao au ay âu ây eo êu ia iêu iu oai oao oay oeo oi ôi ơi ua uây ui uôi uơ uya uyu ưa ưi ươi ươu ưu yêu
 
 These may be used with a final consonant:
 
@@ -56,7 +56,7 @@ These may be used with a final consonant:
 
 These must be used with a final consonant:
 
-> iê oă oo uâ uô uyê ươ
+> iê oă oo uâ uô uyê ươ yê
 
 Any other combinations of vowels is invalid.
 
@@ -87,7 +87,7 @@ Tone marks are placed on the first letter of the following:
 
 Tone marks are placed on the second letter of the following:
 
-> iê iêu oa oai oao oay oă oe oeo oo uâ uây uê uô uôi uy uya uyu ươ ươi ươu yêu
+> iê iêu oa oai oao oay oă oe oeo oo uâ uây uê uô uôi uơ uy uya uyu ươ ươi ươu yê yêu
 
 Tone marks are placed on the third letter of the following:
 
