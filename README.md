@@ -39,7 +39,7 @@ Try the latest build in your browser with the [live demo](https://okorz001.githu
   decode(encode(text)) === text; // true for any Vietnamese text
   ```
 
-- **Tested**: round-trips against a dictionary of over 22,000 Vietnamese words (see [src/dictionary.test.ts](src/dictionary.test.ts))
+Encode and decode round-trips are tested against a dictionary of 22,000+ Vietnamese words.
 
 ## API
 
