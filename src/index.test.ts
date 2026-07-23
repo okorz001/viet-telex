@@ -168,9 +168,13 @@ describe("decode", () => {
       ["uyees", "uyế"],
       ["uwas", "ứa"],
       ["uwis", "ứi"],
+      ["uwowis", "ưới"],
       ["uwows", "ướ"],
+      ["uwowus", "ướu"],
       ["uwus", "ứu"],
       ["yeeus", "yếu"],
+      ["nguwowif", "người"],
+      ["huwowu", "hươu"],
     ])("%s → %s", ([input, output]) => {
       expect(decode(input)).toBe(output);
     });
