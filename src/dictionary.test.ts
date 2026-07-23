@@ -5,15 +5,15 @@ import { decode, encode } from "./index.js";
 // The dictionary has some invalid entries that must be skipped.
 const SKIP_LIST = new Set<string>([
   "Blowing dust and wind.", // not Vietnamese; junk entry in the source data
-  "hắc buá", // source typo, tone mark on wrong vowel (should be "hắc búa")
-  "hết viá", // source typo, tone mark on wrong vowel (should be "hết vía")
-  "kịch muá", // source typo, tone mark on wrong vowel (should be "kịch múa")
-  "ngư tiêù", // source typo, tone mark on wrong vowel (should be "ngư tiều")
-  "hũu sản", // source typo, "u" instead of "ư" (should be "hữu sản")
-  "hình thức chủ nghiã", // source typo, tone mark on wrong vowel (should be "nghĩa")
   "chòong", // source typo, tone mark on wrong vowel (should be "choòng")
   "gòong", // source typo, tone mark on wrong vowel (should be "goòng")
+  "hắc buá", // source typo, tone mark on wrong vowel (should be "hắc búa")
+  "hết viá", // source typo, tone mark on wrong vowel (should be "hết vía")
+  "hình thức chủ nghiã", // source typo, tone mark on wrong vowel (should be "nghĩa")
+  "hũu sản", // source typo, "u" instead of "ư" (should be "hữu sản")
+  "kịch muá", // source typo, tone mark on wrong vowel (should be "kịch múa")
   "loã xõa", // mixed tone placement styles not supported
+  "ngư tiêù", // source typo, tone mark on wrong vowel (should be "ngư tiều")
   "oẻ họe", // mixed tone placement styles not supported
 ]);
 
