@@ -2,11 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { decode, encode } from "./index.js";
 
-// Words confirmed by manual triage to be legitimately out of scope for the
-// round-trip invariant (loanwords, abbreviations, etc.), not parser bugs.
-// Do not add an entry here without first checking docs/vietnamese.md and
-// whether the failure is actually fixable in NUCLEI / *_CONSONANTS (see the
-// #58/#59 precedent).
+// The dictionary has some invalid entries that must be skipped.
 const SKIP_LIST = new Set<string>([
   "Blowing dust and wind.", // not Vietnamese; junk entry in the source data
   "hắc buá", // source typo, tone mark on wrong vowel (should be "hắc búa")
