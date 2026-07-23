@@ -177,6 +177,7 @@ describe("decode", () => {
       ["uwowis", "ưới"],
       ["uwowus", "ướu"],
       ["uwus", "ứu"],
+      ["yees", "yế"],
       ["yeeus", "yếu"],
     ])("%s → %s", ([input, output]) => {
       expect(decode(input)).toBe(output);
@@ -401,6 +402,21 @@ describe("encode", () => {
       ["ả", "ar"],
       ["ã", "ax"],
       ["ạ", "aj"],
+    ])("%s → %s", ([input, output]) => {
+      expect(encode(input)).toBe(output);
+    });
+  });
+
+  describe("extended Latin digraphs combined with nặng tone", () => {
+    // NFD canonical ordering places the dot-below mark before the
+    // circumflex/breve (e.g. "ệ".normalize("NFD") is e + dot-below +
+    // circumflex), so these exercise base letters carrying both a
+    // modifier and a tone mark.
+    it.for([
+      ["liệt", "lieetj"],
+      ["phận", "phaanj"],
+      ["mộng", "moongj"],
+      ["lặn", "lawnj"],
     ])("%s → %s", ([input, output]) => {
       expect(encode(input)).toBe(output);
     });
